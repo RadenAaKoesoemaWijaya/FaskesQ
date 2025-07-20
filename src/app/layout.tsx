@@ -9,7 +9,7 @@ import { Bell, UserCircle } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
-  title: 'SehatQ - Rekam Medis Elektronik',
+  title: 'FaskesQ - Rekam Medis Elektronik',
   description: 'Aplikasi rekam medis elektronik yang komprehensif.',
 };
 
