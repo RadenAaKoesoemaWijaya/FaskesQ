@@ -6,6 +6,10 @@ export type Patient = {
   contact: string;
   address: string;
   avatarUrl: string;
+  nik: string;
+  insuranceNumber?: string;
+  paymentMethod: 'Tunai' | 'Asuransi' | 'BPJS';
+  medicalRecordNumber: string;
   history: Examination[];
 };
 

@@ -28,6 +28,12 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: 'Nama harus terdiri dari minimal 2 karakter.',
   }),
+  nik: z.string().length(16, {
+    message: 'NIK harus terdiri dari 16 digit.',
+  }),
+  medicalRecordNumber: z.string().min(1, {
+    message: 'Nomor rekam medis wajib diisi.',
+  }),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
     message: 'Silakan masukkan tanggal yang valid dalam format YYYY-MM-DD.',
   }),
@@ -38,6 +44,8 @@ const formSchema = z.object({
   address: z.string().min(5, {
     message: 'Alamat harus terdiri dari minimal 5 karakter.',
   }),
+  paymentMethod: z.enum(['Tunai', 'Asuransi', 'BPJS']),
+  insuranceNumber: z.string().optional(),
 });
 
 export function PatientRegistrationForm() {
@@ -48,11 +56,16 @@ export function PatientRegistrationForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      nik: '',
+      medicalRecordNumber: '',
       dateOfBirth: '',
       contact: '',
       address: '',
+      insuranceNumber: '',
     },
   });
+
+  const paymentMethod = form.watch('paymentMethod');
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
@@ -77,6 +90,32 @@ export function PatientRegistrationForm() {
                 <FormLabel>Nama Lengkap</FormLabel>
                 <FormControl>
                   <Input placeholder="John Doe" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="nik"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nomor Induk Kependudukan (NIK)</FormLabel>
+                <FormControl>
+                  <Input placeholder="16 digit NIK" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="medicalRecordNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nomor Rekam Medis</FormLabel>
+                <FormControl>
+                  <Input placeholder="Contoh: MR005" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -133,6 +172,46 @@ export function PatientRegistrationForm() {
               </FormItem>
             )}
           />
+            <FormField
+            control={form.control}
+            name="paymentMethod"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Metode Pembayaran</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih metode pembayaran" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Tunai">Tunai</SelectItem>
+                    <SelectItem value="Asuransi">Asuransi</SelectItem>
+                    <SelectItem value="BPJS">BPJS</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {(paymentMethod === 'Asuransi' || paymentMethod === 'BPJS') && (
+            <FormField
+              control={form.control}
+              name="insuranceNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nomor Asuransi/BPJS</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Masukkan nomor kartu" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           <FormField
             control={form.control}
             name="address"
