@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import './globals.css';
 import { SidebarProvider, Sidebar, SidebarInset, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
@@ -36,9 +37,11 @@ export default function RootLayout({
               <MainNav />
             </SidebarContent>
             <SidebarFooter>
-              <Button variant="ghost" className="w-full justify-start gap-2">
-                <UserCircle className="size-4" />
-                <span className="group-data-[collapsible=icon]:hidden">Profil</span>
+              <Button variant="ghost" className="w-full justify-start gap-2" asChild>
+                <Link href="/profile">
+                  <UserCircle className="size-4" />
+                  <span className="group-data-[collapsible=icon]:hidden">Profil</span>
+                </Link>
               </Button>
             </SidebarFooter>
           </Sidebar>
@@ -52,8 +55,10 @@ export default function RootLayout({
                 <Button variant="ghost" size="icon" aria-label="Notifikasi">
                   <Bell className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" aria-label="Profil Pengguna">
-                  <UserCircle className="h-6 w-6" />
+                 <Button variant="ghost" size="icon" aria-label="Profil Pengguna" asChild>
+                  <Link href="/profile">
+                    <UserCircle className="h-6 w-6" />
+                  </Link>
                 </Button>
               </div>
             </header>
