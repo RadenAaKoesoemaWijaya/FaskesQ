@@ -75,6 +75,13 @@ const formSchema = z.object({
   // Diagnosis
   primaryDiagnosis: z.string().min(1, 'Diagnosis primer harus diisi.'),
   secondaryDiagnosis: z.string().optional(),
+  prognosis: z.string().optional(),
+  patientEducation: z.string().optional(),
+  referral: z.object({
+    isReferred: z.boolean().default(false),
+    facility: z.string().optional(),
+    reason: z.string().optional(),
+  }).optional(),
   // Therapy
   prescriptions: z.array(z.object({
     drugName: z.string().min(1, 'Nama obat harus diisi'),
@@ -240,6 +247,13 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
       emg: '',
       primaryDiagnosis: '',
       secondaryDiagnosis: '',
+      prognosis: '',
+      patientEducation: '',
+      referral: {
+        isReferred: false,
+        facility: '',
+        reason: '',
+      },
       prescriptions: [{ drugName: '', preparation: '', dose: '', quantity: '' }],
       actions: '',
     },
