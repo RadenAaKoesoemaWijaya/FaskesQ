@@ -22,7 +22,6 @@ import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Bea
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState } from 'react';
-import type { MedicalScribeOutput } from '@/app/actions';
 import { MedicalScribe } from '@/components/medical-scribe';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -66,6 +65,21 @@ const formSchema = z.object({
   actions: z.string().optional(),
 });
 
+type MedicalScribeOutput = {
+  anamnesis: {
+    mainComplaint: string;
+    presentIllness: string;
+    pastMedicalHistory: string;
+    drugAllergy: string;
+  };
+  physicalExamination: {
+    consciousness: string;
+    bloodPressure: string;
+    heartRate: string;
+    respiratoryRate: string;
+    temperature: string;
+  };
+};
 
 function PatientProfile({ patient }: { patient: Patient }) {
   const getAge = (dateString: string) => {
@@ -255,6 +269,8 @@ function PatientDetailPageContent({ id }: { id: string }) {
       const fetchedPatient = await getPatientById(id);
       if (fetchedPatient) {
         setPatient(fetchedPatient);
+      } else {
+        notFound();
       }
     }
     loadPatient();
@@ -319,8 +335,9 @@ export default function PatientDetailPage({
 }: {
   params: { id: string };
 }) {
-  if (!params.id) {
+  const { id } = params;
+  if (!id) {
     notFound();
   }
-  return <PatientDetailPageContent id={params.id} />;
+  return <PatientDetailPageContent id={id} />;
 }
