@@ -116,6 +116,10 @@ const formSchema = z.object({
     quantity: z.string().min(1, 'Jumlah harus diisi'),
   })),
   actions: z.string().optional(),
+  inpatientCare: z.object({
+    isAdmitted: z.boolean().default(false),
+    instructions: z.string().optional(),
+  }).optional(),
 });
 
 type MedicalScribeOutput = {
@@ -307,6 +311,10 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
       },
       prescriptions: [{ drugName: '', preparation: '', dose: '', quantity: '' }],
       actions: '',
+      inpatientCare: {
+        isAdmitted: false,
+        instructions: '',
+      }
     },
   });
 

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Save, Trash2, Bot, Loader2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Bot, Loader2, BedDouble } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -25,9 +25,10 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import { Switch } from './ui/switch';
 
 export function TherapyForm() {
-  const { control, getValues } = useFormContext();
+  const { control, getValues, watch } = useFormContext();
   const { toast } = useToast();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,18 +40,22 @@ export function TherapyForm() {
     name: "prescriptions"
   });
 
+  const isAdmitted = watch('inpatientCare.isAdmitted');
+
   const handleSaveAndSummarize = async () => {
     setIsProcessing(true);
     try {
         const formData = getValues();
         const prescriptions = formData.prescriptions.map((p: any) => `${p.drugName} ${p.preparation} ${p.dose} (qty: ${p.quantity})`).join(', ');
+        const inpatient = formData.inpatientCare?.isAdmitted ? `Instruksi Rawat Inap: ${formData.inpatientCare.instructions}` : 'Tidak ada instruksi rawat inap.';
+        const actions = `Tindakan: ${formData.actions}. ${inpatient}`;
 
         const input = {
             anamnesis: `Keluhan Utama: ${formData.mainComplaint}. Riwayat Sekarang: ${formData.presentIllness}. Riwayat Dahulu: ${formData.pastMedicalHistory}. Alergi: ${formData.drugAllergy}.`,
             physicalExamination: `Kesadaran: ${formData.consciousness}, TD: ${formData.bloodPressure}, Nadi: ${formData.heartRate}, RR: ${formData.respiratoryRate}, Suhu: ${formData.temperature}.`,
             supportingExaminations: "Hasil penunjang terlampir jika ada.",
             diagnosis: `Primer: ${formData.primaryDiagnosis}. Sekunder: ${formData.secondaryDiagnosis}`,
-            prescriptionsAndActions: `Resep: ${prescriptions}. Tindakan: ${formData.actions}`,
+            prescriptionsAndActions: `Resep: ${prescriptions}. ${actions}`,
         };
         
         const result = await getMedicalResume(input);
@@ -151,7 +156,7 @@ export function TherapyForm() {
             name="actions"
             render={({ field }) => (
             <FormItem>
-                <FormLabel>Tindakan Medis & Edukasi</FormLabel>
+                <FormLabel>Tindakan Medis Lainnya</FormLabel>
                 <FormControl>
                 <Textarea
                     placeholder="Contoh: Dilakukan hecting 3 jahitan. Edukasi untuk menjaga luka tetap kering..."
@@ -163,6 +168,52 @@ export function TherapyForm() {
             </FormItem>
             )}
         />
+
+        <Separator />
+
+        <div>
+            <h3 className="text-lg font-medium mb-2">Tindak Lanjut Rawat Inap</h3>
+            <div className="space-y-6 p-4 border rounded-lg">
+                <FormField
+                    control={control}
+                    name="inpatientCare.isAdmitted"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between">
+                            <div className="space-y-0.5">
+                                <FormLabel className="flex items-center gap-2"><BedDouble />Anjuran Rawat Inap</FormLabel>
+                                <p className="text-sm text-muted-foreground">Aktifkan jika pasien memerlukan perawatan lebih lanjut di rumah sakit.</p>
+                            </div>
+                            <FormControl>
+                                <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+                {isAdmitted && (
+                     <FormField
+                        control={control}
+                        name="inpatientCare.instructions"
+                        render={({ field }) => (
+                        <FormItem className="animate-in fade-in-50">
+                            <FormLabel>Instruksi Rawat Inap</FormLabel>
+                            <FormControl>
+                            <Textarea
+                                placeholder="Tuliskan instruksi awal untuk perawatan di ruang rawat inap, seperti terapi cairan, observasi tanda vital, diet, dll."
+                                rows={4}
+                                {...field}
+                            />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                )}
+            </div>
+        </div>
+
         <div className="flex justify-end pt-4 border-t mt-8">
           <Button type="button" onClick={handleSaveAndSummarize} disabled={isProcessing}>
             {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
