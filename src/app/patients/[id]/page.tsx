@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 function PatientProfile({ patient }: { patient: Patient }) {
   const getAge = (dateString: string) => {
+    if (!dateString) return '';
     const today = new Date();
     const birthDate = new Date(dateString);
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -101,7 +102,7 @@ function MedicalHistory({ patient }: { patient: Patient }) {
                         </TableBody>
                     </Table>
                 ) : (
-                    <p className="text-sm text-muted-foreground">Belum ada riwayat pemeriksaan.</p>
+                    <p className="text-sm text-muted-foreground text-center py-4">Belum ada riwayat pemeriksaan.</p>
                 )}
             </CardContent>
         </Card>
@@ -132,7 +133,7 @@ export default async function PatientDetailPage({
       <Tabs defaultValue="examination" className="w-full">
         <TabsList className="grid w-full grid-cols-3 md:w-[600px]">
           <TabsTrigger value="profile">
-            <User className="mr-2 h-4 w-4" /> Profil
+            <User className="mr-2 h-4 w-4" /> Profil Pasien
           </TabsTrigger>
           <TabsTrigger value="examination">
             <Stethoscope className="mr-2 h-4 w-4" /> Pemeriksaan Baru
