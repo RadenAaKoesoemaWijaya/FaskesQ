@@ -14,12 +14,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Save, Search } from 'lucide-react';
-import { Textarea } from './ui/textarea';
 
 const formSchema = z.object({
   primaryDiagnosis: z.string().min(1, 'Diagnosis primer harus diisi.'),
   secondaryDiagnosis: z.string().optional(),
-  supportingExaminations: z.string().optional(),
 });
 
 export function DiagnosisForm() {
@@ -28,7 +26,6 @@ export function DiagnosisForm() {
     defaultValues: {
       primaryDiagnosis: '',
       secondaryDiagnosis: '',
-      supportingExaminations: '',
     },
   });
 
@@ -77,23 +74,6 @@ export function DiagnosisForm() {
             )}
             />
         </div>
-        <FormField
-            control={form.control}
-            name="supportingExaminations"
-            render={({ field }) => (
-            <FormItem>
-                <FormLabel>Pemeriksaan Penunjang</FormLabel>
-                <FormControl>
-                <Textarea
-                    placeholder="Hasil laboratorium, radiologi, EKG, dll."
-                    rows={4}
-                    {...field}
-                />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-            )}
-        />
         <div className="flex justify-end pt-4">
           <Button type="submit">
             <Save className="mr-2 h-4 w-4" />

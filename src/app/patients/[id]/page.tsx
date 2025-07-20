@@ -16,8 +16,9 @@ import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import type { Patient } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill } from 'lucide-react';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SupportingExamForm } from '@/components/supporting-exam-form';
 
 function PatientProfile({ patient }: { patient: Patient }) {
   const getAge = (dateString: string) => {
@@ -125,9 +126,10 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="anamnesis" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="anamnesis"><Stethoscope className="mr-2 h-4 w-4" />Anamnesis</TabsTrigger>
                     <TabsTrigger value="physical-exam"><User className="mr-2 h-4 w-4" />Pemeriksaan Fisik</TabsTrigger>
+                    <TabsTrigger value="supporting-exam"><Beaker className="mr-2 h-4 w-4" />Penunjang</TabsTrigger>
                     <TabsTrigger value="diagnosis"><ClipboardPlus className="mr-2 h-4 w-4" />Diagnosis</TabsTrigger>
                     <TabsTrigger value="therapy"><Pill className="mr-2 h-4 w-4" />Terapi & Tindakan</TabsTrigger>
                 </TabsList>
@@ -136,6 +138,9 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
                 </TabsContent>
                 <TabsContent value="physical-exam" className="mt-6">
                     <PhysicalExamForm />
+                </TabsContent>
+                <TabsContent value="supporting-exam" className="mt-6">
+                    <SupportingExamForm />
                 </TabsContent>
                 <TabsContent value="diagnosis" className="mt-6">
                     <DiagnosisForm />
