@@ -11,9 +11,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ExaminationForm } from '@/components/examination-form';
+import { AnamnesisForm } from '@/components/anamnesis-form';
+import { PhysicalExamForm } from '@/components/physical-exam-form';
+import { DiagnosisForm } from '@/components/diagnosis-form';
+import { TherapyForm } from '@/components/therapy-form';
 import type { Patient } from '@/lib/types';
-import { FileText, Stethoscope, User, History } from 'lucide-react';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function PatientProfile({ patient }: { patient: Patient }) {
@@ -109,6 +112,43 @@ function MedicalHistory({ patient }: { patient: Patient }) {
     )
 }
 
+function NewExaminationSection({ patient }: { patient: Patient }) {
+  return (
+     <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+            <FileText /> Catat Rekam Medis
+            </CardTitle>
+            <CardDescription>
+            Isi formulir di bawah ini untuk mencatat hasil pemeriksaan pasien secara terstruktur.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Tabs defaultValue="anamnesis" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="anamnesis"><Stethoscope className="mr-2 h-4 w-4" />Anamnesis</TabsTrigger>
+                    <TabsTrigger value="physical-exam"><User className="mr-2 h-4 w-4" />Pemeriksaan Fisik</TabsTrigger>
+                    <TabsTrigger value="diagnosis"><ClipboardPlus className="mr-2 h-4 w-4" />Diagnosis</TabsTrigger>
+                    <TabsTrigger value="therapy"><Pill className="mr-2 h-4 w-4" />Terapi & Tindakan</TabsTrigger>
+                </TabsList>
+                <TabsContent value="anamnesis" className="mt-6">
+                    <AnamnesisForm />
+                </TabsContent>
+                <TabsContent value="physical-exam" className="mt-6">
+                    <PhysicalExamForm />
+                </TabsContent>
+                <TabsContent value="diagnosis" className="mt-6">
+                    <DiagnosisForm />
+                </TabsContent>
+                <TabsContent value="therapy" className="mt-6">
+                    <TherapyForm />
+                </TabsContent>
+            </Tabs>
+        </CardContent>
+     </Card>
+  )
+}
+
 export default async function PatientDetailPage({
   params,
 }: {
@@ -146,19 +186,7 @@ export default async function PatientDetailPage({
           <PatientProfile patient={patient} />
         </TabsContent>
         <TabsContent value="examination" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText /> Catat Rekam Medis
-              </CardTitle>
-              <CardDescription>
-                Isi formulir di bawah ini untuk mencatat hasil pemeriksaan pasien.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ExaminationForm patient={patient} />
-            </CardContent>
-          </Card>
+            <NewExaminationSection patient={patient} />
         </TabsContent>
          <TabsContent value="history" className="mt-6">
             <MedicalHistory patient={patient} />
