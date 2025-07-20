@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { notFound } from 'next/navigation';
 import { getPatientById } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
@@ -57,7 +58,7 @@ const formSchema = z.object({
   abdomenAuscultation: z.string().optional(),
   extremities: z.string().optional(),
   neurological: z.string().optional(),
-   // Supporting Exam
+   // Supporting Exam - Results
   completeBloodCount: z.string().optional(),
   urinalysis: z.string().optional(),
   bloodChemistry: z.string().optional(),
@@ -72,6 +73,29 @@ const formSchema = z.object({
   eeg: z.string().optional(),
   emg: z.string().optional(),
   fileUpload: z.any().optional(),
+  // Supporting Exam - Request
+  requests: z.object({
+    lab: z.object({
+      completeBloodCount: z.boolean().default(false),
+      urinalysis: z.boolean().default(false),
+      bloodChemistry: z.boolean().default(false),
+      microscopic: z.boolean().default(false),
+      immunology: z.boolean().default(false),
+    }).optional(),
+    radiology: z.object({
+      xray: z.boolean().default(false),
+      ctScan: z.boolean().default(false),
+      mri: z.boolean().default(false),
+      ultrasound: z.boolean().default(false),
+      petScan: z.boolean().default(false),
+    }).optional(),
+    other: z.object({
+      ekg: z.boolean().default(false),
+      eeg: z.boolean().default(false),
+      emg: z.boolean().default(false),
+    }).optional(),
+    notes: z.string().optional(),
+  }).optional(),
   // Diagnosis
   primaryDiagnosis: z.string().min(1, 'Diagnosis primer harus diisi.'),
   secondaryDiagnosis: z.string().optional(),
@@ -245,6 +269,12 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
       ekg: '',
       eeg: '',
       emg: '',
+      requests: {
+        lab: {},
+        radiology: {},
+        other: {},
+        notes: ''
+      },
       primaryDiagnosis: '',
       secondaryDiagnosis: '',
       prognosis: '',
@@ -300,7 +330,7 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
                       <PhysicalExamForm />
                   </TabsContent>
                   <TabsContent value="supporting-exam" className="mt-6">
-                      <SupportingExamForm />
+                      <SupportingExamForm patient={patient}/>
                   </TabsContent>
                   <TabsContent value="diagnosis" className="mt-6">
                       <DiagnosisForm />
