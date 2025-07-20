@@ -29,7 +29,6 @@ export function MainNav() {
         <SidebarMenuItem key={item.href}>
           <Link href={item.href} passHref>
             <SidebarMenuButton
-              as="a"
               isActive={pathname === item.href}
               tooltip={item.label}
               className={cn(
