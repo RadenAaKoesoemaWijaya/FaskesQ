@@ -9,8 +9,8 @@ import { Bell, UserCircle } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
-  title: 'SehatQ - Electronic Health Record',
-  description: 'A comprehensive electronic health record application.',
+  title: 'SehatQ - Rekam Medis Elektronik',
+  description: 'Aplikasi rekam medis elektronik yang komprehensif.',
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="id" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -38,7 +38,7 @@ export default function RootLayout({
             <SidebarFooter>
               <Button variant="ghost" className="w-full justify-start gap-2">
                 <UserCircle className="size-4" />
-                <span className="group-data-[collapsible=icon]:hidden">Profile</span>
+                <span className="group-data-[collapsible=icon]:hidden">Profil</span>
               </Button>
             </SidebarFooter>
           </Sidebar>
@@ -49,10 +49,10 @@ export default function RootLayout({
                 {/* Optional: Add a search bar or other header content here */}
               </div>
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" aria-label="Notifications">
+                <Button variant="ghost" size="icon" aria-label="Notifikasi">
                   <Bell className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" aria-label="User Profile">
+                <Button variant="ghost" size="icon" aria-label="Profil Pengguna">
                   <UserCircle className="h-6 w-6" />
                 </Button>
               </div>

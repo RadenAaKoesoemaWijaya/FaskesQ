@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/sidebar';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/patients/new', label: 'Register Patient', icon: UserPlus },
+  { href: '/', label: 'Dasbor', icon: LayoutDashboard },
+  { href: '/patients/new', label: 'Daftarkan Pasien', icon: UserPlus },
   {
     href: '/testimonials/new',
-    label: 'Testimonials',
+    label: 'Testimoni',
     icon: MessageSquareHeart,
   },
 ];
@@ -27,7 +27,7 @@ export function MainNav() {
     <SidebarMenu>
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
-          <Link href={item.href} legacyBehavior passHref>
+          <Link href={item.href} legacyBehavior={false} passHref>
             <SidebarMenuButton
               as="a"
               isActive={pathname === item.href}

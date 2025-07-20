@@ -31,10 +31,10 @@ import { Sparkles, LoaderCircle, Lightbulb } from 'lucide-react';
 
 const formSchema = z.object({
   examinationFindings: z.string().min(10, {
-    message: 'Examination findings must be at least 10 characters.',
+    message: 'Hasil pemeriksaan harus minimal 10 karakter.',
   }),
   patientHistory: z.string().min(10, {
-    message: 'Patient history must be at least 10 characters.',
+    message: 'Riwayat pasien harus minimal 10 karakter.',
   }),
 });
 
@@ -76,13 +76,13 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
     if (result.success && result.data) {
       setSuggestions(result.data);
       toast({
-        title: 'AI Suggestions Ready',
-        description: 'Review the generated treatment options below.',
+        title: 'Saran AI Siap',
+        description: 'Tinjau opsi perawatan yang dihasilkan di bawah.',
       });
     } else {
       toast({
         variant: 'destructive',
-        title: 'Error',
+        title: 'Terjadi Kesalahan',
         description: result.error,
       });
     }
@@ -90,10 +90,10 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
   }
 
   function onSaveRecord(values: z.infer<typeof formSchema>) {
-    console.log('Saving record:', values);
+    console.log('Menyimpan rekam medis:', values);
     toast({
-      title: 'Record Saved',
-      description: `Examination record for ${patient.name} has been saved.`,
+      title: 'Rekam Medis Tersimpan',
+      description: `Rekam medis pemeriksaan untuk ${patient.name} telah disimpan.`,
     });
     // Here you would typically save the full record to your database
     form.reset();
@@ -102,14 +102,27 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
 
   const getEvidenceBadgeVariant = (level: string) => {
     switch (level.toLowerCase()) {
-      case 'high':
+      case 'tinggi':
         return 'default';
-      case 'moderate':
+      case 'sedang':
         return 'secondary';
       default:
         return 'outline';
     }
   };
+
+  const translateEvidenceLevel = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'high':
+        return 'Tinggi';
+      case 'moderate':
+        return 'Sedang';
+      case 'low':
+        return 'Rendah';
+      default:
+        return level;
+    }
+  }
 
   return (
     <Form {...form}>
@@ -123,10 +136,10 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
             name="examinationFindings"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Examination Findings</FormLabel>
+                <FormLabel>Hasil Pemeriksaan</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Describe the patient's symptoms, vital signs, and physical examination results..."
+                    placeholder="Jelaskan gejala pasien, tanda-tanda vital, dan hasil pemeriksaan fisik..."
                     rows={5}
                     {...field}
                   />
@@ -140,16 +153,16 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
             name="patientHistory"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Relevant Patient History</FormLabel>
+                <FormLabel>Riwayat Pasien yang Relevan</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Include relevant medical history, allergies, and current medications..."
+                    placeholder="Sertakan riwayat medis yang relevan, alergi, dan obat-obatan saat ini..."
                     rows={5}
                     {...field}
                   />
                 </FormControl>
                 <FormDescription>
-                  This information will be used by the AI to suggest treatments.
+                  Informasi ini akan digunakan oleh AI untuk menyarankan perawatan.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -168,16 +181,16 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            Get AI Suggestions
+            Dapatkan Saran AI
           </Button>
-          <Button type="submit">Save Record</Button>
+          <Button type="submit">Simpan Rekam Medis</Button>
         </div>
       </form>
 
       {suggestions && (
         <div className="mt-8 space-y-6 animate-in fade-in-50">
           <h3 className="text-xl font-headline font-semibold flex items-center gap-2">
-            <Lightbulb className="text-primary" /> AI-Generated Treatment Suggestions
+            <Lightbulb className="text-primary" /> Saran Perawatan dari AI
           </h3>
           <Accordion type="single" collapsible className="w-full">
             {suggestions.treatmentSuggestions.map((suggestion, index) => (
@@ -185,18 +198,18 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
                 <AccordionTrigger className="text-left hover:no-underline">
                   <div className="flex items-center justify-between w-full pr-4">
                     <span className="font-semibold text-primary">{suggestion.treatmentName}</span>
-                    <Badge variant={getEvidenceBadgeVariant(suggestion.evidenceLevel)}>
-                      {suggestion.evidenceLevel} Evidence
+                    <Badge variant={getEvidenceBadgeVariant(translateEvidenceLevel(suggestion.evidenceLevel))}>
+                      Bukti {translateEvidenceLevel(suggestion.evidenceLevel)}
                     </Badge>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-1">Description</h4>
+                    <h4 className="font-semibold mb-1">Deskripsi</h4>
                     <p className="text-muted-foreground">{suggestion.description}</p>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-1">Risks</h4>
+                    <h4 className="font-semibold mb-1">Risiko</h4>
                     <p className="text-muted-foreground">{suggestion.risks}</p>
                   </div>
                 </AccordionContent>
@@ -204,7 +217,7 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
             ))}
           </Accordion>
           <Alert>
-            <AlertTitle>Additional Recommendations</AlertTitle>
+            <AlertTitle>Rekomendasi Tambahan</AlertTitle>
             <AlertDescription>
               {suggestions.additionalRecommendations}
             </AlertDescription>

@@ -22,7 +22,7 @@ export async function getTreatmentSuggestions(
     return {
       success: false,
       error:
-        'An error occurred while generating treatment suggestions. Please try again.',
+        'Terjadi kesalahan saat membuat saran perawatan. Silakan coba lagi.',
     };
   }
 }

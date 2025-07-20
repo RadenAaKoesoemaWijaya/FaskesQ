@@ -12,16 +12,16 @@ import { MessageSquareHeart } from 'lucide-react';
 export default function NewTestimonialPage() {
   return (
     <div className="animate-in fade-in-50">
-      <PageHeader title="Submit a Testimonial" />
+      <PageHeader title="Kirim Testimoni" />
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquareHeart />
-            Share Your Experience
+            Bagikan Pengalaman Anda
           </CardTitle>
           <CardDescription>
-            Your feedback helps us improve our services. Please share your
-            thoughts about the care you received.
+            Umpan balik Anda membantu kami meningkatkan layanan kami. Silakan bagikan
+            pemikiran Anda tentang perawatan yang Anda terima.
           </CardDescription>
         </CardHeader>
         <CardContent>

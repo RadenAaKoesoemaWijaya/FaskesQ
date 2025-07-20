@@ -26,17 +26,17 @@ import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: 'Name must be at least 2 characters.',
+    message: 'Nama harus terdiri dari minimal 2 karakter.',
   }),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'Please enter a valid date in YYYY-MM-DD format.',
+    message: 'Silakan masukkan tanggal yang valid dalam format YYYY-MM-DD.',
   }),
-  gender: z.enum(['Male', 'Female', 'Other']),
+  gender: z.enum(['Pria', 'Wanita', 'Lainnya']),
   contact: z.string().email({
-    message: 'Please enter a valid email address.',
+    message: 'Silakan masukkan alamat email yang valid.',
   }),
   address: z.string().min(5, {
-    message: 'Address must be at least 5 characters.',
+    message: 'Alamat harus terdiri dari minimal 5 karakter.',
   }),
 });
 
@@ -57,8 +57,8 @@ export function PatientRegistrationForm() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
     toast({
-      title: 'Patient Registered',
-      description: `${values.name} has been successfully registered.`,
+      title: 'Pasien Terdaftar',
+      description: `${values.name} telah berhasil terdaftar.`,
     });
     // In a real app, you would handle the form submission to your backend here.
     // For this demo, we'll just redirect to the dashboard.
@@ -74,7 +74,7 @@ export function PatientRegistrationForm() {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>Nama Lengkap</FormLabel>
                 <FormControl>
                   <Input placeholder="John Doe" {...field} />
                 </FormControl>
@@ -87,7 +87,7 @@ export function PatientRegistrationForm() {
             name="dateOfBirth"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date of Birth</FormLabel>
+                <FormLabel>Tanggal Lahir</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -100,20 +100,20 @@ export function PatientRegistrationForm() {
             name="gender"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Gender</FormLabel>
+                <FormLabel>Jenis Kelamin</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a gender" />
+                      <SelectValue placeholder="Pilih jenis kelamin" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Pria">Pria</SelectItem>
+                    <SelectItem value="Wanita">Wanita</SelectItem>
+                    <SelectItem value="Lainnya">Lainnya</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -125,9 +125,9 @@ export function PatientRegistrationForm() {
             name="contact"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Contact Email</FormLabel>
+                <FormLabel>Email Kontak</FormLabel>
                 <FormControl>
-                  <Input placeholder="patient@example.com" {...field} />
+                  <Input placeholder="pasien@contoh.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -138,10 +138,10 @@ export function PatientRegistrationForm() {
             name="address"
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel>Address</FormLabel>
+                <FormLabel>Alamat</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="123 Health St, Wellness City"
+                    placeholder="Jl. Sehat 123, Kota Bugar"
                     {...field}
                   />
                 </FormControl>
@@ -151,7 +151,7 @@ export function PatientRegistrationForm() {
           />
         </div>
         <div className="flex justify-end">
-          <Button type="submit">Register Patient</Button>
+          <Button type="submit">Daftarkan Pasien</Button>
         </div>
       </form>
     </Form>

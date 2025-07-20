@@ -29,36 +29,36 @@ function PatientProfile({ patient }: { patient: Patient }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Demographic Information</CardTitle>
+        <CardTitle>Informasi Demografis</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="font-medium text-muted-foreground">Full Name</p>
+            <p className="font-medium text-muted-foreground">Nama Lengkap</p>
             <p>{patient.name}</p>
           </div>
           <div>
-            <p className="font-medium text-muted-foreground">Patient ID</p>
+            <p className="font-medium text-muted-foreground">ID Pasien</p>
             <p>{patient.id}</p>
           </div>
           <div>
-            <p className="font-medium text-muted-foreground">Date of Birth</p>
+            <p className="font-medium text-muted-foreground">Tanggal Lahir</p>
             <p>
-              {patient.dateOfBirth} ({getAge(patient.dateOfBirth)} years old)
+              {patient.dateOfBirth} ({getAge(patient.dateOfBirth)} tahun)
             </p>
           </div>
           <div>
-            <p className="font-medium text-muted-foreground">Gender</p>
+            <p className="font-medium text-muted-foreground">Jenis Kelamin</p>
             <p>
               <Badge variant="secondary">{patient.gender}</Badge>
             </p>
           </div>
           <div>
-            <p className="font-medium text-muted-foreground">Contact</p>
+            <p className="font-medium text-muted-foreground">Kontak</p>
             <p>{patient.contact}</p>
           </div>
           <div className="md:col-span-2">
-            <p className="font-medium text-muted-foreground">Address</p>
+            <p className="font-medium text-muted-foreground">Alamat</p>
             <p>{patient.address}</p>
           </div>
         </div>
@@ -91,10 +91,10 @@ export default async function PatientDetailPage({
       <Tabs defaultValue="examination" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
           <TabsTrigger value="profile">
-            <User className="mr-2 h-4 w-4" /> Profile
+            <User className="mr-2 h-4 w-4" /> Profil
           </TabsTrigger>
           <TabsTrigger value="examination">
-            <Stethoscope className="mr-2 h-4 w-4" /> New Examination
+            <Stethoscope className="mr-2 h-4 w-4" /> Pemeriksaan Baru
           </TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-6">
@@ -104,7 +104,7 @@ export default async function PatientDetailPage({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText /> Examination & Treatment
+                <FileText /> Pemeriksaan & Perawatan
               </CardTitle>
             </CardHeader>
             <CardContent>

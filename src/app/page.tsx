@@ -24,9 +24,9 @@ function PatientCard({ patient }: { patient: Patient }) {
         </CardHeader>
         <CardContent className="flex-grow">
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p><strong>DOB:</strong> {patient.dateOfBirth}</p>
-            <p><strong>Gender:</strong> <Badge variant="secondary">{patient.gender}</Badge></p>
-            <p><strong>Contact:</strong> {patient.contact}</p>
+            <p><strong>Tgl Lahir:</strong> {patient.dateOfBirth}</p>
+            <p><strong>Jenis Kelamin:</strong> <Badge variant="secondary">{patient.gender}</Badge></p>
+            <p><strong>Kontak:</strong> {patient.contact}</p>
           </div>
         </CardContent>
       </Card>
@@ -39,11 +39,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="animate-in fade-in-50">
-      <PageHeader title="Patient Dashboard">
+      <PageHeader title="Dasbor Pasien">
         <Button asChild>
           <Link href="/patients/new">
             <PlusCircle />
-            Register Patient
+            Daftarkan Pasien
           </Link>
         </Button>
       </PageHeader>
