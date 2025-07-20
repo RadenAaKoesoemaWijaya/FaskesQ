@@ -1,6 +1,8 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PlusCircle, Search, Users, Clock, DollarSign, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
@@ -91,8 +93,9 @@ function StatsCard({ title, value, icon, description }: { title: string, value: 
   )
 }
 
-export default function DashboardPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const query = searchParams?.q || '';
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get('q') || '';
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -215,4 +218,12 @@ export default function DashboardPage({ searchParams }: { searchParams?: { q?: s
       </div>
     </div>
   );
+}
+
+export default function DashboardPage() {
+  return (
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </React.Suspense>
+  )
 }
