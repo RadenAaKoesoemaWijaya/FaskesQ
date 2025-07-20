@@ -1,11 +1,8 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -17,32 +14,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Save, Upload } from 'lucide-react';
 import { Label } from './ui/label';
 
-const formSchema = z.object({
-  labResults: z.string().optional(),
-  radiologyResults: z.string().optional(),
-  otherResults: z.string().optional(),
-  fileUpload: z.any().optional(),
-});
-
 export function SupportingExamForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      labResults: '',
-      radiologyResults: '',
-      otherResults: '',
-    },
-  });
+  const { control, handleSubmit } = useFormContext();
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: any) {
     console.log('Supporting Exam submitted:', values);
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <FormField
-          control={form.control}
+          control={control}
           name="labResults"
           render={({ field }) => (
             <FormItem>
@@ -55,7 +37,7 @@ export function SupportingExamForm() {
           )}
         />
         <FormField
-          control={form.control}
+          control={control}
           name="radiologyResults"
           render={({ field }) => (
             <FormItem>
@@ -72,7 +54,7 @@ export function SupportingExamForm() {
           )}
         />
         <FormField
-          control={form.control}
+          control={control}
           name="otherResults"
           render={({ field }) => (
             <FormItem>
@@ -89,7 +71,7 @@ export function SupportingExamForm() {
             <Label>Unggah Berkas Laporan</Label>
             <div className="flex items-center gap-4">
                 <FormField
-                control={form.control}
+                control={control}
                 name="fileUpload"
                 render={({ field }) => (
                     <FormItem className="flex-grow">
@@ -114,6 +96,5 @@ export function SupportingExamForm() {
           </Button>
         </div>
       </form>
-    </Form>
   );
 }

@@ -1,3 +1,5 @@
+'use client';
+
 import { notFound } from 'next/navigation';
 import { getPatientById } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
@@ -19,6 +21,51 @@ import type { Patient } from '@/lib/types';
 import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
+import { useEffect, useState } from 'react';
+import type { MedicalScribeOutput } from '@/ai/flows/medical-scribe-flow';
+import { MedicalScribe } from '@/components/medical-scribe';
+import { useForm, FormProvider } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const formSchema = z.object({
+  // Anamnesis
+  mainComplaint: z.string().min(1, 'Keluhan utama tidak boleh kosong.'),
+  presentIllness: z.string().min(1, 'Riwayat penyakit sekarang tidak boleh kosong.'),
+  pastMedicalHistory: z.string().optional(),
+  drugAllergy: z.string().optional(),
+  // Physical Exam
+  consciousness: z.string().min(1, "Tingkat kesadaran harus dipilih"),
+  bloodPressure: z.string().min(1, "Tekanan darah harus diisi"),
+  heartRate: z.string().min(1, "Nadi harus diisi"),
+  respiratoryRate: z.string().min(1, "Laju pernapasan harus diisi"),
+  temperature: z.string().min(1, "Suhu harus diisi"),
+  eyes: z.string().optional(),
+  nose: z.string().optional(),
+  mouth: z.string().optional(),
+  chest: z.string().optional(),
+  lungs: z.string().optional(),
+  heart: z.string().optional(),
+  abdomen: z.string().optional(),
+  extremities: z.string().optional(),
+   // Supporting Exam
+  labResults: z.string().optional(),
+  radiologyResults: z.string().optional(),
+  otherResults: z.string().optional(),
+  fileUpload: z.any().optional(),
+  // Diagnosis
+  primaryDiagnosis: z.string().min(1, 'Diagnosis primer harus diisi.'),
+  secondaryDiagnosis: z.string().optional(),
+  // Therapy
+  prescriptions: z.array(z.object({
+    drugName: z.string().min(1, 'Nama obat harus diisi'),
+    preparation: z.string().min(1, 'Sediaan harus diisi'),
+    dose: z.string().min(1, 'Dosis harus diisi'),
+    quantity: z.string().min(1, 'Jumlah harus diisi'),
+  })),
+  actions: z.string().optional(),
+});
+
 
 function PatientProfile({ patient }: { patient: Patient }) {
   const getAge = (dateString: string) => {
@@ -114,55 +161,120 @@ function MedicalHistory({ patient }: { patient: Patient }) {
 }
 
 function NewExaminationSection({ patient }: { patient: Patient }) {
+  const methods = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+     defaultValues: {
+      mainComplaint: '',
+      presentIllness: '',
+      pastMedicalHistory: '',
+      drugAllergy: '',
+      consciousness: '',
+      bloodPressure: '',
+      heartRate: '',
+      respiratoryRate: '',
+      temperature: '',
+      eyes: '',
+      nose: '',
+      mouth: '',
+      chest: '',
+      lungs: '',
+      heart: '',
+      abdomen: '',
+      extremities: '',
+      labResults: '',
+      radiologyResults: '',
+      otherResults: '',
+      primaryDiagnosis: '',
+      secondaryDiagnosis: '',
+      prescriptions: [{ drugName: '', preparation: '', dose: '', quantity: '' }],
+      actions: '',
+    },
+  });
+
+  const handleScribeComplete = (data: MedicalScribeOutput) => {
+    methods.setValue('mainComplaint', data.anamnesis.mainComplaint);
+    methods.setValue('presentIllness', data.anamnesis.presentIllness);
+    methods.setValue('pastMedicalHistory', data.anamnesis.pastMedicalHistory);
+    methods.setValue('drugAllergy', data.anamnesis.drugAllergy);
+
+    methods.setValue('consciousness', data.physicalExamination.consciousness);
+    methods.setValue('bloodPressure', data.physicalExamination.bloodPressure);
+    methods.setValue('heartRate', data.physicalExamination.heartRate);
+    methods.setValue('respiratoryRate', data.physicalExamination.respiratoryRate);
+    methods.setValue('temperature', data.physicalExamination.temperature);
+  };
+  
   return (
-     <Card>
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-            <FileText /> Catat Rekam Medis
-            </CardTitle>
-            <CardDescription>
-            Isi formulir di bawah ini untuk mencatat hasil pemeriksaan pasien secara terstruktur.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Tabs defaultValue="anamnesis" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger value="anamnesis"><Stethoscope className="mr-2 h-4 w-4" />Anamnesis</TabsTrigger>
-                    <TabsTrigger value="physical-exam"><User className="mr-2 h-4 w-4" />Pemeriksaan Fisik</TabsTrigger>
-                    <TabsTrigger value="supporting-exam"><Beaker className="mr-2 h-4 w-4" />Penunjang</TabsTrigger>
-                    <TabsTrigger value="diagnosis"><ClipboardPlus className="mr-2 h-4 w-4" />Diagnosis</TabsTrigger>
-                    <TabsTrigger value="therapy"><Pill className="mr-2 h-4 w-4" />Terapi & Tindakan</TabsTrigger>
-                </TabsList>
-                <TabsContent value="anamnesis" className="mt-6">
-                    <AnamnesisForm />
-                </TabsContent>
-                <TabsContent value="physical-exam" className="mt-6">
-                    <PhysicalExamForm />
-                </TabsContent>
-                <TabsContent value="supporting-exam" className="mt-6">
-                    <SupportingExamForm />
-                </TabsContent>
-                <TabsContent value="diagnosis" className="mt-6">
-                    <DiagnosisForm />
-                </TabsContent>
-                <TabsContent value="therapy" className="mt-6">
-                    <TherapyForm />
-                </TabsContent>
-            </Tabs>
-        </CardContent>
-     </Card>
+    <FormProvider {...methods}>
+      <Card>
+          <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+              <FileText /> Catat Rekam Medis
+              </CardTitle>
+              <CardDescription>
+              Gunakan AI Scribe untuk merekam percakapan, atau isi formulir di bawah ini secara manual.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+              <MedicalScribe onScribeComplete={handleScribeComplete} />
+              <Tabs defaultValue="anamnesis" className="w-full mt-6">
+                  <TabsList className="grid w-full grid-cols-5">
+                      <TabsTrigger value="anamnesis"><Stethoscope className="mr-2 h-4 w-4" />Anamnesis</TabsTrigger>
+                      <TabsTrigger value="physical-exam"><User className="mr-2 h-4 w-4" />Pemeriksaan Fisik</TabsTrigger>
+                      <TabsTrigger value="supporting-exam"><Beaker className="mr-2 h-4 w-4" />Penunjang</TabsTrigger>
+                      <TabsTrigger value="diagnosis"><ClipboardPlus className="mr-2 h-4 w-4" />Diagnosis</TabsTrigger>
+                      <TabsTrigger value="therapy"><Pill className="mr-2 h-4 w-4" />Terapi & Tindakan</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="anamnesis" className="mt-6">
+                      <AnamnesisForm />
+                  </TabsContent>
+                  <TabsContent value="physical-exam" className="mt-6">
+                      <PhysicalExamForm />
+                  </TabsContent>
+                  <TabsContent value="supporting-exam" className="mt-6">
+                      <SupportingExamForm />
+                  </TabsContent>
+                  <TabsContent value="diagnosis" className="mt-6">
+                      <DiagnosisForm />
+                  </TabsContent>
+                  <TabsContent value="therapy" className="mt-6">
+                      <TherapyForm />
+                  </TabsContent>
+              </Tabs>
+          </CardContent>
+      </Card>
+    </FormProvider>
   )
 }
 
-export default async function PatientDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const patient = await getPatientById(params.id);
+function PatientDetailPageContent({ id }: { id: string }) {
+  const [patient, setPatient] = useState<Patient | null>(null);
+
+  useEffect(() => {
+    async function loadPatient() {
+      const fetchedPatient = await getPatientById(id);
+      if (fetchedPatient) {
+        setPatient(fetchedPatient);
+      }
+    }
+    loadPatient();
+  }, [id]);
 
   if (!patient) {
-    notFound();
+    return (
+       <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 rounded-full bg-muted animate-pulse"></div>
+          <div className="h-8 w-48 rounded bg-muted animate-pulse"></div>
+        </div>
+        <div className="h-10 w-full md:w-[600px] rounded bg-muted animate-pulse mt-8"></div>
+        <Card className="mt-6">
+          <CardContent className="pt-6">
+             <div className="h-64 w-full rounded bg-muted animate-pulse"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -199,4 +311,16 @@ export default async function PatientDetailPage({
       </Tabs>
     </div>
   );
+}
+
+
+export default function PatientDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  if (!params.id) {
+    notFound();
+  }
+  return <PatientDetailPageContent id={params.id} />;
 }

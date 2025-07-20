@@ -1,11 +1,8 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -15,30 +12,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Save, Search } from 'lucide-react';
 
-const formSchema = z.object({
-  primaryDiagnosis: z.string().min(1, 'Diagnosis primer harus diisi.'),
-  secondaryDiagnosis: z.string().optional(),
-});
-
 export function DiagnosisForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      primaryDiagnosis: '',
-      secondaryDiagnosis: '',
-    },
-  });
+  const { control, handleSubmit } = useFormContext();
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: any) {
     console.log('Diagnosis submitted:', values);
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
-            control={form.control}
+            control={control}
             name="primaryDiagnosis"
             render={({ field }) => (
                 <FormItem>
@@ -56,7 +41,7 @@ export function DiagnosisForm() {
             )}
             />
             <FormField
-            control={form.control}
+            control={control}
             name="secondaryDiagnosis"
             render={({ field }) => (
                 <FormItem>
@@ -81,6 +66,5 @@ export function DiagnosisForm() {
           </Button>
         </div>
       </form>
-    </Form>
   );
 }

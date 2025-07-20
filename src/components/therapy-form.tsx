@@ -1,11 +1,8 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { z } from 'zod';
+import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -17,46 +14,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 
-const prescriptionSchema = z.object({
-    drugName: z.string().min(1, 'Nama obat harus diisi'),
-    preparation: z.string().min(1, 'Sediaan harus diisi'),
-    dose: z.string().min(1, 'Dosis harus diisi'),
-    quantity: z.string().min(1, 'Jumlah harus diisi'),
-});
-
-const formSchema = z.object({
-  prescriptions: z.array(prescriptionSchema),
-  actions: z.string().optional(),
-});
-
 export function TherapyForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      prescriptions: [{ drugName: '', preparation: '', dose: '', quantity: '' }],
-      actions: '',
-    },
-  });
+  const { control, handleSubmit } = useFormContext();
 
   const { fields, append, remove } = useFieldArray({
-    control: form.control,
+    control: control,
     name: "prescriptions"
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: any) {
     console.log('Therapy submitted:', values);
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
             <h3 className="text-lg font-medium mb-4">Peresepan Obat</h3>
             <div className="space-y-4">
             {fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-end p-4 border rounded-lg relative">
                     <FormField
-                        control={form.control}
+                        control={control}
                         name={`prescriptions.${index}.drugName`}
                         render={({ field }) => (
                             <FormItem>
@@ -67,7 +45,7 @@ export function TherapyForm() {
                         )}
                     />
                      <FormField
-                        control={form.control}
+                        control={control}
                         name={`prescriptions.${index}.preparation`}
                         render={({ field }) => (
                             <FormItem>
@@ -78,7 +56,7 @@ export function TherapyForm() {
                         )}
                     />
                      <FormField
-                        control={form.control}
+                        control={control}
                         name={`prescriptions.${index}.dose`}
                         render={({ field }) => (
                             <FormItem>
@@ -89,7 +67,7 @@ export function TherapyForm() {
                         )}
                     />
                     <FormField
-                        control={form.control}
+                        control={control}
                         name={`prescriptions.${index}.quantity`}
                         render={({ field }) => (
                             <FormItem>
@@ -120,7 +98,7 @@ export function TherapyForm() {
         <Separator />
 
         <FormField
-            control={form.control}
+            control={control}
             name="actions"
             render={({ field }) => (
             <FormItem>
@@ -143,6 +121,5 @@ export function TherapyForm() {
           </Button>
         </div>
       </form>
-    </Form>
   );
 }
