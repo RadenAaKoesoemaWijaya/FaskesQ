@@ -19,7 +19,7 @@ import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import type { Patient } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker } from 'lucide-react';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState } from 'react';
@@ -27,6 +27,8 @@ import { MedicalScribe } from '@/components/medical-scribe';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   // Anamnesis
@@ -191,6 +193,18 @@ function PatientProfile({ patient }: { patient: Patient }) {
 }
 
 function MedicalHistory({ patient }: { patient: Patient }) {
+    const { toast } = useToast();
+
+    const handleRequestFeedback = (examId: string) => {
+        // In a real application, this would trigger a backend service to send an email.
+        // For this demo, we'll just show a success toast.
+        console.log(`Requesting feedback for examination ${examId} for patient ${patient.name}`);
+        toast({
+            title: 'Permintaan Terkirim',
+            description: `Permintaan umpan balik telah dikirim (simulasi) ke email ${patient.name}.`,
+        });
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -205,6 +219,7 @@ function MedicalHistory({ patient }: { patient: Patient }) {
                                 <TableHead>Tanggal</TableHead>
                                 <TableHead>Diagnosis</TableHead>
                                 <TableHead className="hidden md:table-cell">Anamnesis</TableHead>
+                                <TableHead className="text-right">Tindakan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -213,6 +228,12 @@ function MedicalHistory({ patient }: { patient: Patient }) {
                                     <TableCell className="font-medium">{record.date}</TableCell>
                                     <TableCell>{record.diagnosis}</TableCell>
                                     <TableCell className="hidden md:table-cell truncate max-w-sm">{record.anamnesis}</TableCell>
+                                     <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => handleRequestFeedback(record.id)}>
+                                            <Send className="mr-2 h-4 w-4" />
+                                            Minta Umpan Balik
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

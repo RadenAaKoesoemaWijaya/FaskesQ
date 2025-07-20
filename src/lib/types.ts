@@ -25,7 +25,9 @@ export type Examination = {
 };
 
 export type Testimonial = {
-  name: string;
+  id: string;
+  patientName: string;
   feedback: string;
+  rating: number;
   date: string;
 };

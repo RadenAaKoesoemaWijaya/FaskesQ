@@ -15,7 +15,7 @@ const navItems = [
   { href: '/patients/new', label: 'Daftarkan Pasien', icon: UserPlus },
    { href: '/teleconsultation', label: 'Telekonsultasi', icon: Laptop },
   {
-    href: '/testimonials/new',
+    href: '/testimonials',
     label: 'Testimoni',
     icon: MessageSquareHeart,
   },
@@ -30,7 +30,7 @@ export function MainNav() {
         <SidebarMenuItem key={item.href}>
           <Link href={item.href}>
             <SidebarMenuButton
-              isActive={pathname === item.href}
+              isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')}
               tooltip={item.label}
               className={cn(
                 'group-data-[collapsible=icon]:justify-center'

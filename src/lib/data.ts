@@ -1,4 +1,4 @@
-import type { Patient } from './types';
+import type { Patient, Testimonial } from './types';
 
 const patients: Patient[] = [
   {
@@ -69,6 +69,30 @@ const patients: Patient[] = [
   },
 ];
 
+const testimonials: Testimonial[] = [
+    {
+        id: 'T001',
+        patientName: 'Budi Santoso',
+        feedback: 'Penjelasan dokter sangat jelas dan mudah dimengerti. Fasilitas bersih dan pelayanannya cepat. Sangat direkomendasikan!',
+        rating: 5,
+        date: '2023-10-18',
+    },
+    {
+        id: 'T002',
+        patientName: 'Alex Wijaya',
+        feedback: 'Proses pendaftaran sedikit membingungkan, tetapi staf sangat membantu. Waktu tunggu tidak terlalu lama.',
+        rating: 4,
+        date: '2023-11-05',
+    },
+    {
+        id: 'T003',
+        patientName: 'Siti Aminah',
+        feedback: 'Dokter sangat ramah dan sabar menjawab semua pertanyaan saya. Saya merasa jauh lebih baik setelah konsultasi.',
+        rating: 4.5,
+        date: '2023-11-20',
+    }
+];
+
 export async function getPatients(query?: string): Promise<Patient[]> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -87,4 +111,10 @@ export async function getPatientById(id: string): Promise<Patient | undefined> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
   return patients.find(p => p.id === id);
+}
+
+export async function getTestimonials(): Promise<Testimonial[]> {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 400));
+    return testimonials.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
