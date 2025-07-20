@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Save, Upload } from 'lucide-react';
 import { Label } from './ui/label';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 export function SupportingExamForm() {
   const { control, handleSubmit } = useFormContext();
@@ -23,49 +24,96 @@ export function SupportingExamForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={control}
-          name="labResults"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Hasil Laboratorium</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Contoh: Hemoglobin 12.5 g/dL, Leukosit 8.000/uL..." rows={5} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={control}
-          name="radiologyResults"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Hasil Radiologi</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Contoh: Foto Thorax: Cor dan pulmo dalam batas normal..."
-                  rows={5}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={control}
-          name="otherResults"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Pemeriksaan Lainnya (EKG, dll)</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Hasil pemeriksaan penunjang lainnya..." rows={3} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <Accordion type="multiple" className="w-full space-y-4">
+            <AccordionItem value="lab" className="border rounded-lg px-4">
+                <AccordionTrigger className="text-lg font-medium">Laboratorium</AccordionTrigger>
+                <AccordionContent className="pt-4 space-y-4">
+                    <FormField
+                    control={control}
+                    name="completeBloodCount"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Pemeriksaan Darah Lengkap</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Hb, Leukosit, Trombosit, dll." rows={3} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={control}
+                    name="urinalysis"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Pemeriksaan Urinalisa</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Warna, pH, protein, glukosa, dll." rows={3} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={control}
+                    name="bloodChemistry"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Pemeriksaan Kimia Darah</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Gula darah, kolesterol, fungsi hati, fungsi ginjal, dll." rows={3} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={control}
+                    name="microscopic"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Pemeriksaan Mikroskopis</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="BTA, Jamur, dll." rows={3} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={control}
+                    name="immunology"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Rapid Test Imunologi</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Widal, HbsAg, HIV, Dengue, dll." rows={3} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </AccordionContent>
+            </AccordionItem>
+             <AccordionItem value="radiology" className="border rounded-lg px-4">
+                <AccordionTrigger className="text-lg font-medium">Radiologi</AccordionTrigger>
+                <AccordionContent className="pt-4 space-y-4">
+                    <FormField control={control} name="xray" render={({ field }) => (<FormItem><FormLabel>Rontgen (X-Ray)</FormLabel><FormControl><Textarea placeholder="Kesan foto thorax, abdomen, dll." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="ctScan" render={({ field }) => (<FormItem><FormLabel>CT Scan</FormLabel><FormControl><Textarea placeholder="Kesan CT Scan kepala, thorax, dll." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="mri" render={({ field }) => (<FormItem><FormLabel>MRI</FormLabel><FormControl><Textarea placeholder="Kesan MRI..." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="ultrasound" render={({ field }) => (<FormItem><FormLabel>USG (Ultrasonografi)</FormLabel><FormControl><Textarea placeholder="Kesan USG abdomen, kandungan, dll." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="petScan" render={({ field }) => (<FormItem><FormLabel>PET Scan</FormLabel><FormControl><Textarea placeholder="Kesan PET Scan..." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="other-exams" className="border rounded-lg px-4">
+                <AccordionTrigger className="text-lg font-medium">Pemeriksaan Lainnya</AccordionTrigger>
+                <AccordionContent className="pt-4 space-y-4">
+                    <FormField control={control} name="ekg" render={({ field }) => (<FormItem><FormLabel>EKG (Elektrokardiogram)</FormLabel><FormControl><Textarea placeholder="Irama, HR, aksis, dll." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="eeg" render={({ field }) => (<FormItem><FormLabel>EEG (Elektroensefalogram)</FormLabel><FormControl><Textarea placeholder="Kesan EEG..." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={control} name="emg" render={({ field }) => (<FormItem><FormLabel>EMG (Elektromiogram)</FormLabel><FormControl><Textarea placeholder="Kesan EMG..." rows={3} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
         
         <div className="space-y-2">
             <Label>Unggah Berkas Laporan</Label>
@@ -76,7 +124,7 @@ export function SupportingExamForm() {
                 render={({ field }) => (
                     <FormItem className="flex-grow">
                     <FormControl>
-                        <Input type="file" {...field} />
+                        <Input type="file" />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
