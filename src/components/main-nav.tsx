@@ -27,21 +27,21 @@ export function MainNav() {
     <SidebarMenu>
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
-          <SidebarMenuButton
-            asChild
-            isActive={pathname === item.href}
-            tooltip={item.label}
-            className={cn(
-              'group-data-[collapsible=icon]:justify-center'
-            )}
-          >
-            <Link href={item.href}>
+          <Link href={item.href} passHref>
+            <SidebarMenuButton
+              as="a"
+              isActive={pathname === item.href}
+              tooltip={item.label}
+              className={cn(
+                'group-data-[collapsible=icon]:justify-center'
+              )}
+            >
               <item.icon className="h-5 w-5" />
               <span className="group-data-[collapsible=icon]:hidden">
                 {item.label}
               </span>
-            </Link>
-          </SidebarMenuButton>
+            </SidebarMenuButton>
+          </Link>
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
