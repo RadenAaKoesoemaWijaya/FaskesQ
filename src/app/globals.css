@@ -91,10 +91,11 @@ body {
   body * {
     visibility: hidden;
   }
-  #printable-area, #printable-area * {
+  #printable-area, #printable-area *,
+  #printable-referral-area, #printable-referral-area * {
     visibility: visible;
   }
-  #printable-area {
+  #printable-area, #printable-referral-area {
     position: absolute;
     left: 0;
     top: 0;
