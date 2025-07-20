@@ -6,13 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExaminationForm } from '@/components/examination-form';
 import type { Patient } from '@/lib/types';
-import { FileText, Stethoscope, User } from 'lucide-react';
+import { FileText, Stethoscope, User, History } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function PatientProfile({ patient }: { patient: Patient }) {
   const getAge = (dateString: string) => {
@@ -38,8 +40,8 @@ function PatientProfile({ patient }: { patient: Patient }) {
             <p>{patient.name}</p>
           </div>
           <div>
-            <p className="font-medium text-muted-foreground">ID Pasien</p>
-            <p>{patient.id}</p>
+            <p className="font-medium text-muted-foreground">No. Rekam Medis</p>
+            <p>{patient.medicalRecordNumber}</p>
           </div>
           <div>
             <p className="font-medium text-muted-foreground">Tanggal Lahir</p>
@@ -57,6 +59,10 @@ function PatientProfile({ patient }: { patient: Patient }) {
             <p className="font-medium text-muted-foreground">Kontak</p>
             <p>{patient.contact}</p>
           </div>
+           <div>
+            <p className="font-medium text-muted-foreground">Metode Pembayaran</p>
+            <p>{patient.paymentMethod} {patient.insuranceNumber && `(${patient.insuranceNumber})`}</p>
+          </div>
           <div className="md:col-span-2">
             <p className="font-medium text-muted-foreground">Alamat</p>
             <p>{patient.address}</p>
@@ -65,6 +71,41 @@ function PatientProfile({ patient }: { patient: Patient }) {
       </CardContent>
     </Card>
   );
+}
+
+function MedicalHistory({ patient }: { patient: Patient }) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Riwayat Pemeriksaan</CardTitle>
+                <CardDescription>Daftar semua pemeriksaan yang telah dilakukan untuk pasien ini.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {patient.history && patient.history.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Tanggal</TableHead>
+                                <TableHead>Diagnosis</TableHead>
+                                <TableHead className="hidden md:table-cell">Anamnesis</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {patient.history.map(record => (
+                                <TableRow key={record.id}>
+                                    <TableCell className="font-medium">{record.date}</TableCell>
+                                    <TableCell>{record.diagnosis}</TableCell>
+                                    <TableCell className="hidden md:table-cell truncate max-w-sm">{record.anamnesis}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <p className="text-sm text-muted-foreground">Belum ada riwayat pemeriksaan.</p>
+                )}
+            </CardContent>
+        </Card>
+    )
 }
 
 export default async function PatientDetailPage({
@@ -89,12 +130,15 @@ export default async function PatientDetailPage({
         </div>
       </PageHeader>
       <Tabs defaultValue="examination" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+        <TabsList className="grid w-full grid-cols-3 md:w-[600px]">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" /> Profil
           </TabsTrigger>
           <TabsTrigger value="examination">
             <Stethoscope className="mr-2 h-4 w-4" /> Pemeriksaan Baru
+          </TabsTrigger>
+           <TabsTrigger value="history">
+            <History className="mr-2 h-4 w-4" /> Riwayat Medis
           </TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-6">
@@ -104,13 +148,19 @@ export default async function PatientDetailPage({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText /> Pemeriksaan & Perawatan
+                <FileText /> Catat Rekam Medis
               </CardTitle>
+              <CardDescription>
+                Isi formulir di bawah ini untuk mencatat hasil pemeriksaan pasien.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ExaminationForm patient={patient} />
             </CardContent>
           </Card>
+        </TabsContent>
+         <TabsContent value="history" className="mt-6">
+            <MedicalHistory patient={patient} />
         </TabsContent>
       </Tabs>
     </div>

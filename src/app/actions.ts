@@ -1,28 +1,27 @@
 'use server';
 
 import {
-  suggestTreatmentOptions,
-  type SuggestTreatmentOptionsInput,
-  type SuggestTreatmentOptionsOutput,
-} from '@/ai/flows/suggest-treatment';
+  completeMedicalResume,
+  type CompleteMedicalResumeInput,
+  type CompleteMedicalResumeOutput,
+} from '@/ai/flows/complete-medical-resume';
 
-export async function getTreatmentSuggestions(
-  input: SuggestTreatmentOptionsInput
+export async function getMedicalResume(
+  input: CompleteMedicalResumeInput
 ): Promise<{
   success: boolean;
-  data?: SuggestTreatmentOptionsOutput;
+  data?: CompleteMedicalResumeOutput;
   error?: string;
 }> {
   try {
-    const suggestions = await suggestTreatmentOptions(input);
-    return { success: true, data: suggestions };
+    const resume = await completeMedicalResume(input);
+    return { success: true, data: resume };
   } catch (error) {
-    console.error('Error fetching treatment suggestions:', error);
-    // In a real app, you might want to log this error to a monitoring service.
+    console.error('Error fetching medical resume:', error);
     return {
       success: false,
       error:
-        'Terjadi kesalahan saat membuat saran perawatan. Silakan coba lagi.',
+        'Terjadi kesalahan saat membuat resume medis. Silakan coba lagi.',
     };
   }
 }

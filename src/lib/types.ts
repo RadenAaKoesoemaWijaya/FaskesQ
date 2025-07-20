@@ -16,14 +16,12 @@ export type Patient = {
 export type Examination = {
   id: string;
   date: string;
-  findings: string;
-  patientHistory: string;
-  treatmentPlan?: TreatmentPlan;
-};
-
-export type TreatmentPlan = {
-  medications: string;
-  followUp: string;
+  anamnesis: string;
+  physicalExamination: string;
+  supportingExaminations: string;
+  diagnosis: string;
+  prescriptionsAndActions: string;
+  medicalResume: string;
 };
 
 export type Testimonial = {

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,68 +15,51 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { getTreatmentSuggestions } from '@/app/actions';
+import { getMedicalResume } from '@/app/actions';
 import type { Patient } from '@/lib/types';
-import type { SuggestTreatmentOptionsOutput } from '@/ai/flows/suggest-treatment';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from './ui/badge';
-import { Sparkles, LoaderCircle, Lightbulb } from 'lucide-react';
+import { Sparkles, LoaderCircle, Save } from 'lucide-react';
 
 const formSchema = z.object({
-  examinationFindings: z.string().min(10, {
-    message: 'Hasil pemeriksaan harus minimal 10 karakter.',
-  }),
-  patientHistory: z.string().min(10, {
-    message: 'Riwayat pasien harus minimal 10 karakter.',
-  }),
+  anamnesis: z.string().min(1, 'Anamnesis tidak boleh kosong.'),
+  physicalExamination: z.string().min(1, 'Pemeriksaan fisik tidak boleh kosong.'),
+  supportingExaminations: z.string().min(1, 'Pemeriksaan penunjang tidak boleh kosong.'),
+  diagnosis: z.string().min(1, 'Diagnosis tidak boleh kosong.'),
+  prescriptionsAndActions: z.string().min(1, 'Peresepan & tindakan tidak boleh kosong.'),
+  medicalResume: z.string().min(1, 'Resume medis tidak boleh kosong.'),
 });
 
 export function ExaminationForm({ patient }: { patient: Patient }) {
   const { toast } = useToast();
-  const [suggestions, setSuggestions] =
-    useState<SuggestTreatmentOptionsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const getAge = (dateString: string) => {
-    const today = new Date();
-    const birthDate = new Date(dateString);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      examinationFindings: '',
-      patientHistory: '',
+      anamnesis: '',
+      physicalExamination: '',
+      supportingExaminations: '',
+      diagnosis: '',
+      prescriptionsAndActions: '',
+      medicalResume: '',
     },
   });
 
-  async function onGetSuggestions(values: z.infer<typeof formSchema>) {
+  async function onGenerateResume() {
     setIsLoading(true);
-    setSuggestions(null);
-
-    const result = await getTreatmentSuggestions({
-      ...values,
-      patientAge: getAge(patient.dateOfBirth),
-      patientGender: patient.gender,
+    const values = form.getValues();
+    const result = await getMedicalResume({
+        anamnesis: values.anamnesis,
+        physicalExamination: values.physicalExamination,
+        supportingExaminations: values.supportingExaminations,
+        diagnosis: values.diagnosis,
+        prescriptionsAndActions: values.prescriptionsAndActions,
     });
 
     if (result.success && result.data) {
-      setSuggestions(result.data);
+      form.setValue('medicalResume', result.data.medicalResume);
       toast({
-        title: 'Saran AI Siap',
-        description: 'Tinjau opsi perawatan yang dihasilkan di bawah.',
+        title: 'Resume Medis Dibuat',
+        description: 'Resume medis telah berhasil dibuat oleh AI.',
       });
     } else {
       toast({
@@ -90,38 +72,12 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
   }
 
   function onSaveRecord(values: z.infer<typeof formSchema>) {
-    console.log('Menyimpan rekam medis:', values);
+    console.log('Menyimpan rekam medis:', { patientId: patient.id, ...values });
     toast({
       title: 'Rekam Medis Tersimpan',
-      description: `Rekam medis pemeriksaan untuk ${patient.name} telah disimpan.`,
+      description: `Rekam medis untuk ${patient.name} telah berhasil disimpan.`,
     });
-    // Here you would typically save the full record to your database
     form.reset();
-    setSuggestions(null);
-  }
-
-  const getEvidenceBadgeVariant = (level: string) => {
-    switch (level.toLowerCase()) {
-      case 'tinggi':
-        return 'default';
-      case 'sedang':
-        return 'secondary';
-      default:
-        return 'outline';
-    }
-  };
-
-  const translateEvidenceLevel = (level: string) => {
-    switch (level.toLowerCase()) {
-      case 'high':
-        return 'Tinggi';
-      case 'moderate':
-        return 'Sedang';
-      case 'low':
-        return 'Rendah';
-      default:
-        return level;
-    }
   }
 
   return (
@@ -130,49 +86,120 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
         onSubmit={form.handleSubmit(onSaveRecord)}
         className="space-y-8"
       >
-        <div className="space-y-6">
-          <FormField
-            control={form.control}
-            name="examinationFindings"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Hasil Pemeriksaan</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Jelaskan gejala pasien, tanda-tanda vital, dan hasil pemeriksaan fisik..."
-                    rows={5}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="patientHistory"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Riwayat Pasien yang Relevan</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Sertakan riwayat medis yang relevan, alergi, dan obat-obatan saat ini..."
-                    rows={5}
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Informasi ini akan digunakan oleh AI untuk menyarankan perawatan.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+                <FormField
+                    control={form.control}
+                    name="anamnesis"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Anamnesis</FormLabel>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Keluhan utama, riwayat penyakit sekarang, riwayat penyakit dahulu..."
+                            rows={4}
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="physicalExamination"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Pemeriksaan Fisik</FormLabel>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Keadaan umum, tanda vital, status lokalis..."
+                            rows={4}
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="supportingExaminations"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Pemeriksaan Penunjang</FormLabel>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Hasil laboratorium, radiologi, EKG, dll."
+                            rows={4}
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+            <div className="space-y-6">
+                 <FormField
+                    control={form.control}
+                    name="diagnosis"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Diagnosis</FormLabel>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Diagnosis kerja dan diagnosis banding..."
+                            rows={2}
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="prescriptionsAndActions"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Peresepan Obat dan Tindakan</FormLabel>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Resep obat, tindakan medis yang dilakukan, edukasi pasien..."
+                            rows={4}
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="medicalResume"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Resume Medis</FormLabel>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Klik 'Lengkapi dengan AI' atau isi manual..."
+                            rows={4}
+                            className="bg-secondary/50"
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
         </div>
-        <div className="flex justify-between items-center gap-4">
+       
+        <div className="flex justify-between items-center gap-4 pt-4 border-t">
           <Button
             type="button"
-            onClick={form.handleSubmit(onGetSuggestions)}
+            onClick={onGenerateResume}
             disabled={isLoading}
             variant="outline"
           >
@@ -181,49 +208,14 @@ export function ExaminationForm({ patient }: { patient: Patient }) {
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            Dapatkan Saran AI
+            Lengkapi Resume dengan AI
           </Button>
-          <Button type="submit">Simpan Rekam Medis</Button>
+          <Button type="submit">
+            <Save className="mr-2 h-4 w-4" />
+            Simpan Rekam Medis
+            </Button>
         </div>
       </form>
-
-      {suggestions && (
-        <div className="mt-8 space-y-6 animate-in fade-in-50">
-          <h3 className="text-xl font-headline font-semibold flex items-center gap-2">
-            <Lightbulb className="text-primary" /> Saran Perawatan dari AI
-          </h3>
-          <Accordion type="single" collapsible className="w-full">
-            {suggestions.treatmentSuggestions.map((suggestion, index) => (
-              <AccordionItem value={`item-${index}`} key={index}>
-                <AccordionTrigger className="text-left hover:no-underline">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <span className="font-semibold text-primary">{suggestion.treatmentName}</span>
-                    <Badge variant={getEvidenceBadgeVariant(translateEvidenceLevel(suggestion.evidenceLevel))}>
-                      Bukti {translateEvidenceLevel(suggestion.evidenceLevel)}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-1">Deskripsi</h4>
-                    <p className="text-muted-foreground">{suggestion.description}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Risiko</h4>
-                    <p className="text-muted-foreground">{suggestion.risks}</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-          <Alert>
-            <AlertTitle>Rekomendasi Tambahan</AlertTitle>
-            <AlertDescription>
-              {suggestions.additionalRecommendations}
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
     </Form>
   );
 }

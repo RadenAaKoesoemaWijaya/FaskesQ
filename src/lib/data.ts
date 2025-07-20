@@ -17,12 +17,12 @@ const patients: Patient[] = [
       {
         id: 'E001',
         date: '2023-10-15',
-        findings: 'Pasien melaporkan batuk terus-menerus dan kelelahan.',
-        patientHistory: 'Bukan perokok, tidak ada riwayat penyakit pernapasan.',
-        treatmentPlan: {
-          medications: 'Diberi resep obat batuk dan disarankan istirahat.',
-          followUp: 'Kontrol kembali dalam satu minggu jika gejala berlanjut.',
-        },
+        anamnesis: 'Pasien datang dengan keluhan batuk kering selama 3 hari disertai demam ringan dan sakit kepala. Tidak ada sesak napas.',
+        physicalExamination: 'Keadaan umum baik, kesadaran compos mentis. Tanda vital: TD 120/80 mmHg, N 88x/menit, RR 20x/menit, S 37.8°C. Pemeriksaan tenggorokan hiperemis.',
+        supportingExaminations: 'Tidak dilakukan.',
+        diagnosis: 'Common Cold (ISPA Virus)',
+        prescriptionsAndActions: 'Diberikan resep Paracetamol 3x500mg jika demam, dan obat batuk sirup 3x1 sendok takar. Disarankan istirahat cukup dan minum banyak air.',
+        medicalResume: 'Pasien laki-laki 38 tahun datang dengan gejala batuk dan demam, didiagnosis sebagai common cold. Diberikan terapi simtomatik dan edukasi untuk istirahat. Kontrol jika gejala memberat.'
       },
     ],
   },
