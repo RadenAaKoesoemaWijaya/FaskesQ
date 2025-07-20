@@ -31,6 +31,8 @@ export async function getMedicalResume(
   }
 }
 
+export type { MedicalScribeOutput };
+
 export async function runMedicalScribe(
   input: MedicalScribeInput
 ): Promise<{

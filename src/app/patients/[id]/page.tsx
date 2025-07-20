@@ -22,7 +22,7 @@ import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Bea
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState } from 'react';
-import type { MedicalScribeOutput } from '@/ai/flows/medical-scribe-flow';
+import type { MedicalScribeOutput } from '@/app/actions';
 import { MedicalScribe } from '@/components/medical-scribe';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';

@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Bot, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from './ui/textarea';
-import { runMedicalScribe } from '@/app/actions';
-import type { MedicalScribeOutput } from '@/ai/flows/medical-scribe-flow';
+import { runMedicalScribe, type MedicalScribeOutput } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 

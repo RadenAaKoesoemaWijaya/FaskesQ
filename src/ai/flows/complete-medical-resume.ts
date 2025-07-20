@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const CompleteMedicalResumeInputSchema = z.object({
+const CompleteMedicalResumeInputSchema = z.object({
   anamnesis: z.string().describe('Hasil anamnesis atau wawancara dengan pasien.'),
   physicalExamination: z.string().describe('Hasil pemeriksaan fisik pasien.'),
   supportingExaminations: z.string().describe('Hasil pemeriksaan penunjang (lab, radiologi, dll.).'),
@@ -19,7 +19,7 @@ export const CompleteMedicalResumeInputSchema = z.object({
 });
 export type CompleteMedicalResumeInput = z.infer<typeof CompleteMedicalResumeInputSchema>;
 
-export const CompleteMedicalResumeOutputSchema = z.object({
+const CompleteMedicalResumeOutputSchema = z.object({
   medicalResume: z.string().describe('Ringkasan naratif dari keseluruhan kondisi pasien, pemeriksaan, dan rencana perawatan untuk dijadikan resume medis.'),
 });
 export type CompleteMedicalResumeOutput = z.infer<typeof CompleteMedicalResumeOutputSchema>;

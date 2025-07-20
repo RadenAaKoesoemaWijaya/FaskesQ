@@ -11,12 +11,12 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const MedicalScribeInputSchema = z.object({
+const MedicalScribeInputSchema = z.object({
   transcript: z.string().describe('The full transcript of the conversation between the doctor and the patient.'),
 });
 export type MedicalScribeInput = z.infer<typeof MedicalScribeInputSchema>;
 
-export const MedicalScribeOutputSchema = z.object({
+const MedicalScribeOutputSchema = z.object({
   anamnesis: z.object({
     mainComplaint: z.string().describe('The patient\'s main complaint.'),
     presentIllness: z.string().describe('The history of the present illness.'),
