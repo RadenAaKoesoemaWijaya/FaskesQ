@@ -35,6 +35,11 @@ export type MedicalScribeOutput = z.infer<typeof MedicalScribeOutputSchema>;
 
 
 export async function medicalScribe(input: MedicalScribeInput): Promise<MedicalScribeOutput> {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error(
+      'Kunci API Gemini tidak ditemukan. Mohon atur GEMINI_API_KEY di file .env Anda.'
+    );
+  }
   return medicalScribeFlow(input);
 }
 
