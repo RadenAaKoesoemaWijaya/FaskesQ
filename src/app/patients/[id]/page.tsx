@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -29,6 +30,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { type MedicalScribeOutput } from '@/app/actions';
 
 const formSchema = z.object({
   // Anamnesis
@@ -122,21 +124,6 @@ const formSchema = z.object({
   }).optional(),
 });
 
-type MedicalScribeOutput = {
-  anamnesis: {
-    mainComplaint: string;
-    presentIllness: string;
-    pastMedicalHistory: string;
-    drugAllergy: string;
-  };
-  physicalExamination: {
-    consciousness: string;
-    bloodPressure: string;
-    heartRate: string;
-    respiratoryRate: string;
-    temperature: string;
-  };
-};
 
 function PatientProfile({ patient }: { patient: Patient }) {
   const getAge = (dateString: string) => {
@@ -448,9 +435,8 @@ export default function PatientDetailPage({
 }: {
   params: { id: string };
 }) {
-  const { id } = params;
-  if (!id) {
+  if (!params.id) {
     notFound();
   }
-  return <PatientDetailPageContent id={id} />;
+  return <PatientDetailPageContent id={params.id} />;
 }
