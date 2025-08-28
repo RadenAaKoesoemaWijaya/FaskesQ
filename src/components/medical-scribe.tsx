@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Bot, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Bot, Loader2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from './ui/textarea';
 import { runMedicalScribe, type MedicalScribeOutput } from '@/app/actions';
@@ -122,6 +122,7 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
       <CardContent>
          {!recognitionRef.current && (
             <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Fitur Tidak Tersedia</AlertTitle>
                 <AlertDescription>
                 Pengenalan suara tidak didukung di browser ini. Coba gunakan Google Chrome atau browser modern lainnya.
