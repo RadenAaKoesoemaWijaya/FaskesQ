@@ -20,7 +20,7 @@ import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import type { Patient } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send } from 'lucide-react';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState } from 'react';
@@ -431,12 +431,12 @@ function PatientDetailPageContent({ id }: { id: string }) {
 
 
 export default function PatientDetailPage({
-  params,
+  params: { id },
 }: {
   params: { id: string };
 }) {
-  if (!params.id) {
+  if (!id) {
     notFound();
   }
-  return <PatientDetailPageContent id={params.id} />;
+  return <PatientDetailPageContent id={id} />;
 }
