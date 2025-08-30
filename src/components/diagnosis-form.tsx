@@ -10,15 +10,24 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Printer, Save, Search, Share2 } from 'lucide-react';
+import { Printer, Save, Search, Share2, Loader2, Info } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Patient } from '@/lib/types';
 import { useState } from 'react';
-import { getMedicalResume } from '@/app/actions';
+import { getMedicalResume, runSuggestIcd10 } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import type { SuggestIcd10Output } from '@/app/actions';
 
 function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient: Patient, referralData: any, medicalResume: string }) {
     const today = new Date().toLocaleDateString('id-ID', {
@@ -87,13 +96,60 @@ function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient
 }
 
 export function DiagnosisForm({ patient }: { patient: Patient }) {
-  const { control, getValues, watch } = useFormContext();
+  const { control, getValues, watch, setValue } = useFormContext();
   const isReferred = watch('referral.isReferred');
   const { toast } = useToast();
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [medicalResume, setMedicalResume] = useState('');
   
+  const [isSearchingIcd, setIsSearchingIcd] = useState(false);
+  const [icdSuggestions, setIcdSuggestions] = useState<SuggestIcd10Output['suggestions']>([]);
+  const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
+  const [searchTarget, setSearchTarget] = useState<'primary' | 'secondary' | null>(null);
+
+  const handleSearchIcd = async (target: 'primary' | 'secondary') => {
+      setSearchTarget(target);
+      const queryField = target === 'primary' ? 'primaryDiagnosis' : 'secondaryDiagnosis';
+      const query = getValues(queryField);
+
+      if (!query) {
+          toast({
+              variant: "destructive",
+              title: "Teks Diagnosis Kosong",
+              description: "Silakan masukkan deskripsi diagnosis sebelum mencari kode.",
+          });
+          return;
+      }
+
+      setIsSearchingIcd(true);
+      setIcdSuggestions([]);
+      setIsSearchDialogOpen(true);
+      
+      const result = await runSuggestIcd10({ diagnosisQuery: query });
+
+      if (result.success && result.data) {
+          setIcdSuggestions(result.data.suggestions);
+      } else {
+          toast({
+              variant: "destructive",
+              title: "Pencarian Gagal",
+              description: result.error || "Gagal mendapatkan saran kode ICD-10.",
+          });
+          setIsSearchDialogOpen(false);
+      }
+      setIsSearchingIcd(false);
+  }
+
+  const handleSelectIcd = (suggestion: { code: string, description: string }) => {
+      if (searchTarget) {
+          const field = searchTarget === 'primary' ? 'primaryDiagnosis' : 'secondaryDiagnosis';
+          setValue(field, `${suggestion.code} - ${suggestion.description}`);
+          setIsSearchDialogOpen(false);
+      }
+  }
+
+
   const handlePrintReferral = async () => {
     setIsPrinting(true);
     try {
@@ -146,12 +202,12 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
             name="primaryDiagnosis"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Diagnosis Primer (ICD-10)</FormLabel>
+                <FormLabel>Diagnosis Primer</FormLabel>
                 <div className="flex gap-2">
                     <FormControl>
-                    <Input placeholder="Contoh: J00 - Common cold" {...field} />
+                    <Input placeholder="Contoh: Common cold" {...field} />
                     </FormControl>
-                    <Button type="button" variant="outline" size="icon">
+                    <Button type="button" variant="outline" size="icon" onClick={() => handleSearchIcd('primary')}>
                         <Search className="h-4 w-4" />
                     </Button>
                 </div>
@@ -164,12 +220,12 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
             name="secondaryDiagnosis"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Diagnosis Sekunder (ICD-10)</FormLabel>
+                <FormLabel>Diagnosis Sekunder</FormLabel>
                  <div className="flex gap-2">
                     <FormControl>
-                    <Input placeholder="Contoh: E11.9 - Diabetes mellitus" {...field} />
+                    <Input placeholder="Contoh: Diabetes mellitus" {...field} />
                     </FormControl>
-                     <Button type="button" variant="outline" size="icon">
+                     <Button type="button" variant="outline" size="icon" onClick={() => handleSearchIcd('secondary')}>
                         <Search className="h-4 w-4" />
                     </Button>
                 </div>
@@ -278,6 +334,46 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
       <div className="hidden">
         <ReferralPrintLayout patient={patient} referralData={watch('referral')} medicalResume={medicalResume} />
       </div>
+
+       <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>Saran Kode ICD-10</DialogTitle>
+                    <DialogDescription>
+                        Berikut adalah saran kode ICD-10 berdasarkan deskripsi diagnosis Anda. Klik salah satu untuk memilih.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    {isSearchingIcd ? (
+                        <div className="flex items-center justify-center h-24">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : icdSuggestions.length > 0 ? (
+                        <div className="space-y-2">
+                            {icdSuggestions.map((suggestion, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => handleSelectIcd(suggestion)}
+                                    className="w-full text-left p-3 rounded-md hover:bg-accent transition-colors border"
+                                >
+                                    <p className="font-bold">{suggestion.code}</p>
+                                    <p className="text-sm text-muted-foreground">{suggestion.description}</p>
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                         <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Tidak Ada Saran</AlertTitle>
+                            <AlertDescription>
+                                AI tidak dapat menemukan saran untuk diagnosis tersebut. Coba gunakan kata kunci yang berbeda atau isi secara manual.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }
