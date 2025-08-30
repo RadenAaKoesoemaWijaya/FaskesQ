@@ -23,7 +23,7 @@ import type { Patient } from '@/lib/types';
 import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { MedicalScribe } from '@/components/medical-scribe';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -39,7 +39,7 @@ const formSchema = z.object({
   pastMedicalHistory: z.string().optional(),
   drugAllergy: z.string().optional(),
   // Physical Exam
-  consciousness: z.string().min(1, "Tingkat kesadaran harus dipilih"),
+  consciousness: z.string().min(1, "Tingkat kesadaran harus diisi"),
   bloodPressure: z.string().min(1, "Tekanan darah harus diisi"),
   heartRate: z.string().min(1, "Nadi harus diisi"),
   respiratoryRate: z.string().min(1, "Laju pernapasan harus diisi"),
