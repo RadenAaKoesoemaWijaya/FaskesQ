@@ -23,6 +23,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { addPatient } from '@/lib/data';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -51,6 +54,7 @@ const formSchema = z.object({
 export function PatientRegistrationForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,15 +71,30 @@ export function PatientRegistrationForm() {
 
   const paymentMethod = form.watch('paymentMethod');
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: 'Pasien Terdaftar',
-      description: `${values.name} telah berhasil terdaftar.`,
-    });
-    // In a real app, you would handle the form submission to your backend here.
-    // For this demo, we'll just redirect to the dashboard.
-    router.push('/');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    try {
+      // In a real app, you would handle the form submission to your backend here.
+      // For this demo, we simulate it and get the new patient ID.
+      const newPatientId = await addPatient(values);
+
+      toast({
+        title: 'Pasien Terdaftar',
+        description: `${values.name} telah berhasil terdaftar. Mengalihkan ke halaman rekam medis...`,
+      });
+      
+      // Redirect to the new patient's detail page
+      router.push(`/patients/${newPatientId}`);
+
+    } catch (error) {
+      console.error("Failed to register patient:", error);
+      toast({
+        title: 'Pendaftaran Gagal',
+        description: 'Terjadi kesalahan saat mendaftarkan pasien. Silakan coba lagi.',
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -230,7 +249,10 @@ export function PatientRegistrationForm() {
           />
         </div>
         <div className="flex justify-end">
-          <Button type="submit">Daftarkan Pasien</Button>
+          <Button type="submit" disabled={isSubmitting}>
+             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? 'Mendaftarkan...' : 'Daftarkan Pasien'}
+          </Button>
         </div>
       </form>
     </Form>

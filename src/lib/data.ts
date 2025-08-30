@@ -1,4 +1,4 @@
-import type { Patient, Testimonial } from './types';
+import type { Patient, PatientRegistrationData, Testimonial } from './types';
 
 const patients: Patient[] = [
   {
@@ -111,6 +111,24 @@ export async function getPatientById(id: string): Promise<Patient | undefined> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
   return patients.find(p => p.id === id);
+}
+
+export async function addPatient(data: PatientRegistrationData): Promise<string> {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const newPatientId = `P${String(patients.length + 1).padStart(3, '0')}`;
+  
+  const newPatient: Patient = {
+    ...data,
+    id: newPatientId,
+    avatarUrl: 'https://placehold.co/100x100.png',
+    history: [],
+  };
+
+  patients.unshift(newPatient); // Add to the beginning of the array
+  
+  return newPatientId;
 }
 
 export async function getTestimonials(): Promise<Testimonial[]> {
