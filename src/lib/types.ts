@@ -27,10 +27,13 @@ export type Examination = {
   medicalResume: string;
 };
 
-export type Testimonial = {
-  id: string;
+export type TestimonialSubmissionData = {
   patientName: string;
   feedback: string;
   rating: number;
+}
+
+export type Testimonial = TestimonialSubmissionData & {
+  id: string;
   date: string;
 };

@@ -1,4 +1,4 @@
-import type { Patient, PatientRegistrationData, Testimonial } from './types';
+import type { Patient, PatientRegistrationData, Testimonial, TestimonialSubmissionData } from './types';
 
 let patients: Patient[] = [
   {
@@ -69,7 +69,7 @@ let patients: Patient[] = [
   },
 ];
 
-const testimonials: Testimonial[] = [
+let testimonials: Testimonial[] = [
     {
         id: 'T001',
         patientName: 'Budi Santoso',
@@ -155,4 +155,17 @@ export async function getTestimonials(): Promise<Testimonial[]> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 400));
     return testimonials.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function addTestimonial(data: TestimonialSubmissionData): Promise<Testimonial> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const newTestimonial: Testimonial = {
+        id: `T${String(testimonials.length + 1).padStart(3, '0')}`,
+        ...data,
+        date: new Date().toISOString(),
+    };
+
+    testimonials.unshift(newTestimonial);
+    return newTestimonial;
 }

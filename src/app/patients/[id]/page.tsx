@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { use } from 'react';
@@ -192,15 +193,17 @@ function PatientProfile({ patient }: { patient: Patient }) {
 
 function MedicalHistory({ patient }: { patient: Patient }) {
     const { toast } = useToast();
+    const router = useRouter();
 
     const handleRequestFeedback = (examId: string) => {
         // In a real application, this would trigger a backend service to send an email.
-        // For this demo, we'll just show a success toast.
+        // For this demo, we'll navigate the user to the form and show a toast.
         console.log(`Requesting feedback for examination ${examId} for patient ${patient.name}`);
         toast({
-            title: 'Permintaan Terkirim',
-            description: `Permintaan umpan balik telah dikirim (simulasi) ke email ${patient.name}.`,
+            title: 'Permintaan Umpan Balik Disimulasikan',
+            description: `Mengarahkan ke formulir testimoni untuk ${patient.name}.`,
         });
+        router.push('/testimonials/new');
     }
 
     return (
@@ -488,12 +491,13 @@ function PatientDetailPageContent({ id }: { id: string }) {
 
 
 export default function PatientDetailPage({
-  params: { id },
+  params,
 }: {
   params: { id: string };
 }) {
+  const id = React.use(params);
   if (!id) {
     notFound();
   }
-  return <PatientDetailPageContent id={id} />;
+  return <PatientDetailPageContent id={id.id} />;
 }
