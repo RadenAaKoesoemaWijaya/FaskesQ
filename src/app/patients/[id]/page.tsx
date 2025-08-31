@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { getPatientById } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -337,6 +337,22 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('abdomenAuscultation', exam.abdomenAuscultation);
     methods.setValue('extremities', exam.extremities);
     methods.setValue('neurological', exam.neurological);
+
+    // Supporting Exams
+    const { supportingExaminations: support } = data;
+    methods.setValue('completeBloodCount', support.completeBloodCount);
+    methods.setValue('urinalysis', support.urinalysis);
+    methods.setValue('bloodChemistry', support.bloodChemistry);
+    methods.setValue('microscopic', support.microscopic);
+    methods.setValue('immunology', support.immunology);
+    methods.setValue('xray', support.xray);
+    methods.setValue('ctScan', support.ctScan);
+    methods.setValue('mri', support.mri);
+    methods.setValue('ultrasound', support.ultrasound);
+    methods.setValue('petScan', support.petScan);
+    methods.setValue('ekg', support.ekg);
+    methods.setValue('eeg', support.eeg);
+    methods.setValue('emg', support.emg);
   };
   
   return (
@@ -452,10 +468,11 @@ function PatientDetailPageContent({ id }: { id: string }) {
 
 
 export default function PatientDetailPage({
-  params: { id },
+  params,
 }: {
   params: { id: string };
 }) {
+  const { id } = params;
   if (!id) {
     notFound();
   }
