@@ -1,6 +1,6 @@
 import type { Patient, PatientRegistrationData, Testimonial } from './types';
 
-const patients: Patient[] = [
+let patients: Patient[] = [
   {
     id: 'P001',
     name: 'Budi Santoso',
@@ -130,6 +130,26 @@ export async function addPatient(data: PatientRegistrationData): Promise<string>
   
   return newPatientId;
 }
+
+export async function updatePatient(id: string, data: Partial<PatientRegistrationData>): Promise<Patient> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const patientIndex = patients.findIndex(p => p.id === id);
+    if (patientIndex === -1) {
+        throw new Error("Patient not found");
+    }
+    patients[patientIndex] = { ...patients[patientIndex], ...data };
+    return patients[patientIndex];
+}
+
+export async function deletePatient(id: string): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const initialLength = patients.length;
+    patients = patients.filter(p => p.id !== id);
+    if (patients.length === initialLength) {
+        throw new Error("Patient not found");
+    }
+}
+
 
 export async function getTestimonials(): Promise<Testimonial[]> {
     // Simulate network delay

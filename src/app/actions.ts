@@ -20,6 +20,8 @@ import {
     type SuggestDifferentialDiagnosisInput,
     type SuggestDifferentialDiagnosisOutput
 } from '@/ai/flows/suggest-differential-diagnosis';
+import { deletePatient as dbDeletePatient, updatePatient as dbUpdatePatient } from '@/lib/data';
+import { revalidatePath } from 'next/cache';
 
 
 export async function getMedicalResume(
@@ -113,5 +115,17 @@ export async function runSuggestDifferentialDiagnosis(input: SuggestDifferential
             success: false,
             error: 'Terjadi kesalahan saat mencari diagnosis banding.',
         };
+    }
+}
+
+
+export async function deletePatientAction(id: string) {
+    try {
+        await dbDeletePatient(id);
+        revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting patient:', error);
+        return { success: false, error: 'Gagal menghapus pasien.' };
     }
 }

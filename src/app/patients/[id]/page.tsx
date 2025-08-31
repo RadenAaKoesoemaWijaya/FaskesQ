@@ -2,7 +2,8 @@
 'use client';
 
 import React, { use } from 'react';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getPatientById } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +21,7 @@ import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import type { Patient } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble } from 'lucide-react';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState } from 'react';
@@ -140,8 +141,14 @@ function PatientProfile({ patient }: { patient: Patient }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row justify-between items-start">
         <CardTitle>Informasi Demografis</CardTitle>
+        <Button variant="outline" size="sm" asChild>
+            <Link href={`/patients/${patient.id}/edit`}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Pasien
+            </Link>
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -481,11 +488,10 @@ function PatientDetailPageContent({ id }: { id: string }) {
 
 
 export default function PatientDetailPage({
-  params,
+  params: { id },
 }: {
   params: { id: string };
 }) {
-  const { id } = params;
   if (!id) {
     notFound();
   }

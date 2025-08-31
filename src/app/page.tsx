@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { PlusCircle, Search, Users, Clock, DollarSign, BarChart } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { PlusCircle, Search, Users, Clock, DollarSign, BarChart, Trash2, Edit, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getPatients } from '@/lib/data';
@@ -20,7 +20,24 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { useEffect, useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { deletePatientAction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const chartData = [
   { month: 'Jan', visits: 186 },
@@ -38,29 +55,53 @@ const chartConfig = {
   },
 };
 
-function PatientCard({ patient }: { patient: Patient }) {
+function PatientCard({ patient, onDelete }: { patient: Patient, onDelete: (id: string, name: string) => void }) {
+  const router = useRouter();
+
   return (
-    <Link href={`/patients/${patient.id}`} className="block hover:shadow-lg transition-shadow duration-200 rounded-lg">
-      <Card className="h-full flex flex-col">
-        <CardHeader className="flex flex-row items-center gap-4">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <Link href={`/patients/${patient.id}`} className="flex items-center gap-4 group">
           <Avatar className="h-12 w-12">
             <AvatarImage src={patient.avatarUrl} alt={patient.name} data-ai-hint="person portrait" />
             <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="font-headline text-lg">{patient.name}</CardTitle>
+            <CardTitle className="font-headline text-lg group-hover:underline">{patient.name}</CardTitle>
             <CardDescription>{patient.medicalRecordNumber}</CardDescription>
           </div>
-        </CardHeader>
-        <CardContent className="flex-grow">
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p><strong>Tgl Lahir:</strong> {patient.dateOfBirth}</p>
-            <p><strong>Jenis Kelamin:</strong> <Badge variant="secondary">{patient.gender}</Badge></p>
-            <p><strong>Kontak:</strong> {patient.contact}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => router.push(`/patients/${patient.id}/edit`)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(patient.id, patient.name)} className="text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Hapus</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <p><strong>Tgl Lahir:</strong> {patient.dateOfBirth}</p>
+          <p><strong>Jenis Kelamin:</strong> <Badge variant="secondary">{patient.gender}</Badge></p>
+          <p><strong>Kontak:</strong> {patient.contact}</p>
+        </div>
+      </CardContent>
+      <CardFooter className="pt-4">
+        <Button variant="outline" size="sm" asChild className="w-full">
+            <Link href={`/patients/${patient.id}`}>Lihat Rekam Medis</Link>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -96,8 +137,10 @@ function StatsCard({ title, value, icon, description }: { title: string, value: 
 function DashboardContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const { toast } = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [patientToDelete, setPatientToDelete] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     async function fetchPatients() {
@@ -108,6 +151,31 @@ function DashboardContent() {
     }
     fetchPatients();
   }, [query]);
+
+  const handleDeleteRequest = (id: string, name: string) => {
+    setPatientToDelete({ id, name });
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!patientToDelete) return;
+    
+    const result = await deletePatientAction(patientToDelete.id);
+    
+    if (result.success) {
+      setPatients(patients.filter(p => p.id !== patientToDelete.id));
+      toast({
+        title: "Pasien Dihapus",
+        description: `Data untuk ${patientToDelete.name} telah berhasil dihapus.`,
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: "Gagal Menghapus",
+        description: result.error,
+      });
+    }
+    setPatientToDelete(null);
+  }
 
   return (
     <div className="animate-in fade-in-50">
@@ -208,7 +276,7 @@ function DashboardContent() {
           ))
         ) : patients.length > 0 ? (
           patients.map((patient) => (
-            <PatientCard key={patient.id} patient={patient} />
+            <PatientCard key={patient.id} patient={patient} onDelete={handleDeleteRequest} />
           ))
         ) : (
           <p className="text-muted-foreground col-span-full text-center">
@@ -216,6 +284,22 @@ function DashboardContent() {
           </p>
         )}
       </div>
+
+      <AlertDialog open={!!patientToDelete} onOpenChange={(open) => !open && setPatientToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda yakin ingin menghapus?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data pasien <strong className='text-foreground'>{patientToDelete?.name}</strong> secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPatientToDelete(null)}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

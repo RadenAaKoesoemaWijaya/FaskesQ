@@ -23,9 +23,10 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { addPatient } from '@/lib/data';
+import { addPatient, updatePatient } from '@/lib/data';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Patient } from '@/lib/types';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -51,14 +52,21 @@ const formSchema = z.object({
   insuranceNumber: z.string().optional(),
 });
 
-export function PatientRegistrationForm() {
+type PatientRegistrationFormProps = {
+  mode?: 'create' | 'edit';
+  patient?: Patient;
+}
+
+export function PatientRegistrationForm({ mode = 'create', patient }: PatientRegistrationFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: mode === 'edit' && patient ? {
+      ...patient
+    } : {
       name: '',
       nik: '',
       medicalRecordNumber: '',
@@ -74,23 +82,27 @@ export function PatientRegistrationForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      // In a real app, you would handle the form submission to your backend here.
-      // For this demo, we simulate it and get the new patient ID.
-      const newPatientId = await addPatient(values);
-
-      toast({
-        title: 'Pasien Terdaftar',
-        description: `${values.name} telah berhasil terdaftar. Mengalihkan ke halaman rekam medis...`,
-      });
-      
-      // Redirect to the new patient's detail page
-      router.push(`/patients/${newPatientId}`);
-
+      if (mode === 'edit' && patient) {
+        await updatePatient(patient.id, values);
+        toast({
+          title: 'Data Pasien Diperbarui',
+          description: `Data untuk ${values.name} telah berhasil diperbarui.`,
+        });
+        router.push(`/patients/${patient.id}`);
+        router.refresh(); // To reflect changes immediately
+      } else {
+        const newPatientId = await addPatient(values);
+        toast({
+          title: 'Pasien Terdaftar',
+          description: `${values.name} telah berhasil terdaftar. Mengalihkan ke halaman rekam medis...`,
+        });
+        router.push(`/patients/${newPatientId}`);
+      }
     } catch (error) {
-      console.error("Failed to register patient:", error);
+      console.error("Failed to submit form:", error);
       toast({
-        title: 'Pendaftaran Gagal',
-        description: 'Terjadi kesalahan saat mendaftarkan pasien. Silakan coba lagi.',
+        title: mode === 'edit' ? 'Gagal Memperbarui' : 'Pendaftaran Gagal',
+        description: `Terjadi kesalahan saat ${mode === 'edit' ? 'memperbarui data' : 'mendaftarkan pasien'}. Silakan coba lagi.`,
         variant: 'destructive',
       });
       setIsSubmitting(false);
@@ -248,10 +260,13 @@ export function PatientRegistrationForm() {
             )}
           />
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-4">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Batal
+          </Button>
           <Button type="submit" disabled={isSubmitting}>
              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? 'Mendaftarkan...' : 'Daftarkan Pasien'}
+            {isSubmitting ? 'Menyimpan...' : mode === 'edit' ? 'Simpan Perubahan' : 'Daftarkan Pasien'}
           </Button>
         </div>
       </form>
