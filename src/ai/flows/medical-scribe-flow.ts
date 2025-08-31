@@ -63,6 +63,17 @@ const MedicalScribeOutputSchema = z.object({
       eeg: z.string().describe("Interpretation results of the electroencephalogram (EEG)."),
       emg: z.string().describe("Interpretation results of the electromyogram (EMG)."),
   }).describe("Results from supporting examinations, if mentioned in the transcript."),
+  plan: z.object({
+    prognosis: z.string().describe("The doctor's prognosis for the patient's condition (e.g., ad bonam, dubia ad malam)."),
+    patientEducation: z.string().describe("Any education or advice given to the patient regarding their condition, treatment, or lifestyle."),
+    prescriptions: z.array(z.object({
+        drugName: z.string().describe("The name of the prescribed drug."),
+        preparation: z.string().describe("The preparation or form of the drug (e.g., 500mg tablet, 60ml syrup)."),
+        dose: z.string().describe("The dosage instructions (e.g., 3 x 1, 2x1)."),
+        quantity: z.string().describe("The total quantity of the drug to be dispensed."),
+    })).describe("A list of medications prescribed to the patient."),
+    actions: z.string().describe("Any other medical actions or procedures performed or recommended (e.g., wound care, referral instructions, follow-up schedule)."),
+  }).describe("The treatment and follow-up plan for the patient.")
 });
 export type MedicalScribeOutput = z.infer<typeof MedicalScribeOutputSchema>;
 
@@ -86,13 +97,14 @@ const prompt = ai.definePrompt({
   1. Anamnesis (main complaint, history of present illness, past history, allergies).
   2. A complete physical examination (vital signs, head-to-toe examination).
   3. Results from supporting examinations (laboratory, radiology, and other tests) if they are discussed.
+  4. The assessment and plan, including prognosis, patient education, prescribed medications, and other actions.
 
   If a piece of information is not mentioned in the transcript, leave the corresponding field empty.
 
   Transcript:
   {{{transcript}}}
 
-  Based on this transcript, please populate the anamnesis, the full physical examination, and any mentioned supporting examination results.
+  Based on this transcript, please populate the anamnesis, the full physical examination, any mentioned supporting examination results, and the complete treatment plan.
   `,
 });
 

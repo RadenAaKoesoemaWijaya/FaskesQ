@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { getPatientById } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
@@ -23,7 +23,7 @@ import type { Patient } from '@/lib/types';
 import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { MedicalScribe } from '@/components/medical-scribe';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -333,7 +333,7 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('heartAuscultation', exam.heartAuscultation);
     methods.setValue('abdomenInspection', exam.abdomenInspection);
     methods.setValue('abdomenPalpation', exam.abdomenPalpation);
-    methods.setValue('abdomenPercussion', exam.abdomenPercussion);
+    methods.setValue('abdomenPercussion', exam.abdomenAuscultation);
     methods.setValue('abdomenAuscultation', exam.abdomenAuscultation);
     methods.setValue('extremities', exam.extremities);
     methods.setValue('neurological', exam.neurological);
@@ -353,6 +353,19 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('ekg', support.ekg);
     methods.setValue('eeg', support.eeg);
     methods.setValue('emg', support.emg);
+    
+    // Plan
+    const { plan } = data;
+    methods.setValue('prognosis', plan.prognosis);
+    methods.setValue('patientEducation', plan.patientEducation);
+    methods.setValue('actions', plan.actions);
+
+    // Prescriptions - reset the field array with new values
+    if (plan.prescriptions && plan.prescriptions.length > 0) {
+        methods.reset({ ...methods.getValues(), prescriptions: plan.prescriptions });
+    } else {
+        methods.reset({ ...methods.getValues(), prescriptions: [{ drugName: '', preparation: '', dose: '', quantity: '' }] });
+    }
   };
   
   return (
