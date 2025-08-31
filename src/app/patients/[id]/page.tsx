@@ -306,16 +306,37 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
   });
 
   const handleScribeComplete = (data: MedicalScribeOutput) => {
+    // Anamnesis
     methods.setValue('mainComplaint', data.anamnesis.mainComplaint);
     methods.setValue('presentIllness', data.anamnesis.presentIllness);
     methods.setValue('pastMedicalHistory', data.anamnesis.pastMedicalHistory);
     methods.setValue('drugAllergy', data.anamnesis.drugAllergy);
 
-    methods.setValue('consciousness', data.physicalExamination.consciousness);
-    methods.setValue('bloodPressure', data.physicalExamination.bloodPressure);
-    methods.setValue('heartRate', data.physicalExamination.heartRate);
-    methods.setValue('respiratoryRate', data.physicalExamination.respiratoryRate);
-    methods.setValue('temperature', data.physicalExamination.temperature);
+    // Physical Exam
+    const { physicalExamination: exam } = data;
+    methods.setValue('consciousness', exam.consciousness);
+    methods.setValue('bloodPressure', exam.bloodPressure);
+    methods.setValue('heartRate', exam.heartRate);
+    methods.setValue('respiratoryRate', exam.respiratoryRate);
+    methods.setValue('temperature', exam.temperature);
+    methods.setValue('oxygenSaturation', exam.oxygenSaturation);
+    methods.setValue('eyes', exam.eyes);
+    methods.setValue('nose', exam.nose);
+    methods.setValue('mouth', exam.mouth);
+    methods.setValue('lungsInspection', exam.lungsInspection);
+    methods.setValue('lungsPalpation', exam.lungsPalpation);
+    methods.setValue('lungsPercussion', exam.lungsPercussion);
+    methods.setValue('lungsAuscultation', exam.lungsAuscultation);
+    methods.setValue('heartInspection', exam.heartInspection);
+    methods.setValue('heartPalpation', exam.heartPalpation);
+    methods.setValue('heartPercussion', exam.heartPercussion);
+    methods.setValue('heartAuscultation', exam.heartAuscultation);
+    methods.setValue('abdomenInspection', exam.abdomenInspection);
+    methods.setValue('abdomenPalpation', exam.abdomenPalpation);
+    methods.setValue('abdomenPercussion', exam.abdomenPercussion);
+    methods.setValue('abdomenAuscultation', exam.abdomenAuscultation);
+    methods.setValue('extremities', exam.extremities);
+    methods.setValue('neurological', exam.neurological);
   };
   
   return (

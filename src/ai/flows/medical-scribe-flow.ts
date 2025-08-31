@@ -24,11 +24,29 @@ const MedicalScribeOutputSchema = z.object({
     drugAllergy: z.string().describe('Any drug allergies the patient has.'),
   }),
   physicalExamination: z.object({
-     consciousness: z.string().describe('The patient\'s level of consciousness (e.g., Compos Mentis).'),
+    consciousness: z.string().describe('The patient\'s level of consciousness (e.g., Compos Mentis).'),
     bloodPressure: z.string().describe('The patient\'s blood pressure in mmHg.'),
     heartRate: z.string().describe('The patient\'s heart rate in beats per minute.'),
     respiratoryRate: z.string().describe('The patient\'s respiratory rate in breaths per minute.'),
     temperature: z.string().describe('The patient\'s temperature in Celsius.'),
+    oxygenSaturation: z.string().describe("The patient's oxygen saturation in percent."),
+    eyes: z.string().describe('Findings from the eye examination.'),
+    nose: z.string().describe('Findings from the nose examination.'),
+    mouth: z.string().describe('Findings from the mouth examination.'),
+    lungsInspection: z.string().describe('Findings from the inspection of the lungs.'),
+    lungsPalpation: z.string().describe('Findings from the palpation of the lungs.'),
+    lungsPercussion: z.string().describe('Findings from the percussion of the lungs.'),
+    lungsAuscultation: z.string().describe('Findings from the auscultation of the lungs.'),
+    heartInspection: z.string().describe('Findings from the inspection of the heart.'),
+    heartPalpation: z.string().describe('Findings from the palpation of the heart.'),
+    heartPercussion: z.string().describe('Findings from the percussion of the heart.'),
+    heartAuscultation: z.string().describe('Findings from the auscultation of the heart.'),
+    abdomenInspection: z.string().describe('Findings from the inspection of the abdomen.'),
+    abdomenPalpation: z.string().describe('Findings from the palpation of the abdomen.'),
+    abdomenPercussion: z.string().describe('Findings from the percussion of the abdomen.'),
+    abdomenAuscultation: z.string().describe('Findings from the auscultation of the abdomen.'),
+    extremities: z.string().describe('Findings from the examination of the extremities.'),
+    neurological: z.string().describe('Findings from the neurological examination.'),
   }),
 });
 export type MedicalScribeOutput = z.infer<typeof MedicalScribeOutputSchema>;
@@ -49,14 +67,14 @@ const prompt = ai.definePrompt({
   output: {schema: MedicalScribeOutputSchema},
   prompt: `You are an expert medical scribe AI. Your task is to listen to a conversation between a doctor and a patient and accurately fill out the medical record based on the information provided in the transcript.
 
-  Carefully analyze the following transcript and extract the required information. Pay close attention to details mentioned by both the patient and the doctor.
+  Carefully analyze the following transcript and extract the required information. Pay close attention to details mentioned by both the patient and the doctor, including anamnesis (main complaint, history) and a complete physical examination (vital signs, head-to-toe examination).
 
   If a piece of information is not mentioned in the transcript, leave the corresponding field empty.
 
   Transcript:
   {{{transcript}}}
 
-  Based on this transcript, please populate the anamnesis and physical examination sections.
+  Based on this transcript, please populate the anamnesis and the full physical examination sections.
   `,
 });
 
