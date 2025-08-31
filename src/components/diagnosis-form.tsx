@@ -10,13 +10,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Printer, Save, Search, Share2, Loader2, Info } from 'lucide-react';
+import { Printer, Save, Search, Share2, Loader2, Info, BrainCircuit } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Patient } from '@/lib/types';
 import { useState } from 'react';
-import { getMedicalResume, runSuggestIcd10 } from '@/app/actions';
+import { getMedicalResume, runSuggestIcd10, runSuggestDifferentialDiagnosis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -27,7 +27,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import type { SuggestIcd10Output } from '@/app/actions';
+import type { SuggestIcd10Output, SuggestDifferentialDiagnosisOutput } from '@/app/actions';
+import { Badge } from './ui/badge';
 
 function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient: Patient, referralData: any, medicalResume: string }) {
     const today = new Date().toLocaleDateString('id-ID', {
@@ -97,16 +98,24 @@ function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient
 
 export function DiagnosisForm({ patient }: { patient: Patient }) {
   const { control, getValues, watch, setValue } = useFormContext();
-  const isReferred = watch('referral.isReferred');
   const { toast } = useToast();
 
+  // States for Referral
+  const isReferred = watch('referral.isReferred');
   const [isPrinting, setIsPrinting] = useState(false);
   const [medicalResume, setMedicalResume] = useState('');
   
+  // States for ICD-10 Search
   const [isSearchingIcd, setIsSearchingIcd] = useState(false);
   const [icdSuggestions, setIcdSuggestions] = useState<SuggestIcd10Output['suggestions']>([]);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [searchTarget, setSearchTarget] = useState<'primary' | 'secondary' | null>(null);
+
+  // States for AI Differential Diagnosis
+  const [showAiDiagnosis, setShowAiDiagnosis] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [diffDiagnosis, setDiffDiagnosis] = useState<string[]>([]);
+
 
   const handleSearchIcd = async (target: 'primary' | 'secondary') => {
       setSearchTarget(target);
@@ -149,6 +158,41 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
       }
   }
 
+  const handleSuggestDifferentialDiagnosis = async () => {
+    setIsSuggesting(true);
+    setDiffDiagnosis([]);
+    try {
+        const values = getValues();
+        const anamnesis = `Keluhan Utama: ${values.mainComplaint}. Riwayat Sekarang: ${values.presentIllness}. Riwayat Dahulu: ${values.pastMedicalHistory}. Alergi: ${values.drugAllergy}.`;
+        const physicalExam = `Kesadaran: ${values.consciousness}, TD: ${values.bloodPressure}, Nadi: ${values.heartRate}, RR: ${values.respiratoryRate}, Suhu: ${values.temperature}. Temuan lain: ${values.eyes}, ${values.nose}, ${values.mouth}, ${values.lungsAuscultation}, ${values.heartAuscultation}, ${values.abdomenAuscultation}`;
+        
+        if (!values.mainComplaint) {
+            toast({
+                variant: 'destructive',
+                title: 'Data Tidak Lengkap',
+                description: 'Pastikan setidaknya kolom Anamnesis dan Pemeriksaan Fisik telah terisi.',
+            });
+            return;
+        }
+
+        const result = await runSuggestDifferentialDiagnosis({ anamnesis, physicalExam });
+        
+        if (result.success && result.data) {
+            setDiffDiagnosis(result.data.diagnoses);
+        } else {
+            throw new Error(result.error || 'Gagal mendapatkan rekomendasi.');
+        }
+
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Gagal Mendapatkan Rekomendasi",
+            description: error.message,
+        });
+    } finally {
+        setIsSuggesting(false);
+    }
+  }
 
   const handlePrintReferral = async () => {
     setIsPrinting(true);
@@ -196,6 +240,45 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-medium mb-4">Penegakan Diagnosis</h3>
+
+         <div className="space-y-4 p-4 border rounded-lg mb-6">
+            <FormItem className="flex flex-row items-center justify-between">
+                <div className="space-y-0.5">
+                    <FormLabel className="flex items-center gap-2"><BrainCircuit />Rekomendasi Diagnosis Banding AI</FormLabel>
+                    <p className="text-sm text-muted-foreground">Aktifkan untuk mendapatkan saran diagnosis banding dari AI.</p>
+                </div>
+                <FormControl>
+                    <Switch
+                    checked={showAiDiagnosis}
+                    onCheckedChange={setShowAiDiagnosis}
+                    />
+                </FormControl>
+            </FormItem>
+
+            {showAiDiagnosis && (
+                <div className="space-y-4 pt-4 border-t animate-in fade-in-50">
+                    <Button type="button" variant="outline" onClick={handleSuggestDifferentialDiagnosis} disabled={isSuggesting}>
+                        {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                        {isSuggesting ? 'Menganalisis...' : 'Dapatkan Rekomendasi'}
+                    </Button>
+                    {isSuggesting && <p className="text-sm text-muted-foreground">AI sedang menganalisis data anamnesis dan pemeriksaan fisik...</p>}
+                    {diffDiagnosis.length > 0 && (
+                        <div>
+                             <h4 className="font-semibold text-sm mb-2">Hasil Rekomendasi:</h4>
+                             <div className="flex flex-wrap gap-2">
+                                {diffDiagnosis.map((diag, i) => (
+                                    <Badge key={i} variant="secondary" className="cursor-pointer" onClick={() => setValue('primaryDiagnosis', diag)}>
+                                        {diag}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
             control={control}

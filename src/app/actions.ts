@@ -15,6 +15,12 @@ import {
   type SuggestIcd10Input,
   type SuggestIcd10Output,
 } from '@/ai/flows/suggest-treatment';
+import {
+    suggestDifferentialDiagnosis,
+    type SuggestDifferentialDiagnosisInput,
+    type SuggestDifferentialDiagnosisOutput
+} from '@/ai/flows/suggest-differential-diagnosis';
+
 
 export async function getMedicalResume(
   input: CompleteMedicalResumeInput
@@ -84,4 +90,28 @@ export async function runSuggestIcd10(
         'Terjadi kesalahan saat mencari kode ICD-10. Silakan coba lagi.',
     };
   }
+}
+
+export type { SuggestDifferentialDiagnosisOutput };
+export async function runSuggestDifferentialDiagnosis(input: SuggestDifferentialDiagnosisInput): Promise<{
+    success: boolean;
+    data?: SuggestDifferentialDiagnosisOutput;
+    error?: string;
+}> {
+    if (!process.env.GEMINI_API_KEY) {
+        return {
+            success: false,
+            error: 'Kunci API Gemini tidak dikonfigurasi.',
+        };
+    }
+    try {
+        const result = await suggestDifferentialDiagnosis(input);
+        return {success: true, data: result};
+    } catch (error) {
+        console.error('Error running suggestDifferentialDiagnosis:', error);
+        return {
+            success: false,
+            error: 'Terjadi kesalahan saat mencari diagnosis banding.',
+        };
+    }
 }
