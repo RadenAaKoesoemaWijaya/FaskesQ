@@ -23,6 +23,7 @@ import {
   MicOff,
   VideoOff,
   MessageSquare,
+  Phone,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -96,151 +97,71 @@ function PatientList({
   );
 }
 
-function VideoCallInterface({ patient }: { patient: Patient }) {
-  const { toast } = useToast();
-  const [isMuted, setIsMuted] = useState(false);
-  const [isCameraOff, setIsCameraOff] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
+function WhatsAppIntegration({ patient }: { patient: Patient }) {
 
-  useEffect(() => {
-    const getCameraPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-        setHasCameraPermission(true);
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Akses Kamera Ditolak',
-          description:
-            'Mohon izinkan akses kamera dan mikrofon di browser Anda.',
-        });
-      }
-    };
+  const formatPhoneNumber = (email: string) => {
+    // This is a placeholder function. In a real app, you'd have a dedicated phone field.
+    // We'll try to extract a number from the email or use a default.
+    // E.g. budi.santoso.6281234567890@example.com -> 6281234567890
+    const match = email.match(/(\d{10,})/);
+    if (match) return match[0];
+    // return a valid test number if no number is found in email
+    return '6281234567890';
+  }
 
-    getCameraPermission();
+  const phoneNumber = formatPhoneNumber(patient.contact);
 
-    return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [toast]);
+  const handleWhatsAppChat = () => {
+    const url = `https://wa.me/${phoneNumber}`;
+    window.open(url, '_blank');
+  };
+
+  const handleWhatsAppVideo = () => {
+    const message = encodeURIComponent('Halo, saya siap untuk memulai sesi video call telekonsultasi kita.');
+    const url = `https://wa.me/${phoneNumber}?text=${message}`;
+    window.open(url, '_blank');
+  };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="relative flex-grow bg-black rounded-t-lg flex items-center justify-center">
-        {!hasCameraPermission ? (
-            <Alert variant="destructive" className="w-auto">
-                <AlertTitle>Kamera Tidak Dapat Diakses</AlertTitle>
-                <AlertDescription>
-                    Periksa kembali izin kamera pada browser Anda.
-                </AlertDescription>
-            </Alert>
-        ) : (
-            <video
-            ref={videoRef}
-            className="w-full h-full object-cover rounded-t-lg"
-            autoPlay
-            playsInline
-            muted
+    <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
+        <Avatar className="h-24 w-24">
+            <AvatarImage
+            src={patient.avatarUrl}
+            alt={patient.name}
             />
-        )}
-        <div className="absolute bottom-4 right-4 w-40 h-32 bg-gray-800 rounded-md border-2 border-gray-600">
-          {/* Placeholder for doctor's video feed */}
-          <div className="flex items-center justify-center h-full text-white text-xs">
-            Kamera Anda
-          </div>
+            <AvatarFallback>
+            {patient.name.charAt(0)}
+            </AvatarFallback>
+        </Avatar>
+        <h2 className="text-2xl font-bold">
+            Mulai Konsultasi dengan {patient.name}
+        </h2>
+        <p className="text-muted-foreground max-w-sm">
+            Gunakan tombol di bawah untuk memulai sesi chat atau video call dengan pasien melalui WhatsApp.
+        </p>
+        <Alert>
+          <Phone className="h-4 w-4" />
+          <AlertTitle>Nomor WhatsApp Pasien</AlertTitle>
+          <AlertDescription>
+            Akan terhubung ke nomor: <strong>+{phoneNumber}</strong>
+          </AlertDescription>
+        </Alert>
+        <div className="flex gap-4 mt-4">
+            <Button size="lg" onClick={handleWhatsAppChat}>
+            <MessageSquare className="mr-2" /> Mulai Chat WhatsApp
+            </Button>
+            <Button size="lg" onClick={handleWhatsAppVideo} variant="outline">
+            <Video className="mr-2" /> Video Call via WhatsApp
+            </Button>
         </div>
-      </div>
-      <div className="flex-shrink-0 bg-secondary/50 p-4 rounded-b-lg flex justify-center items-center gap-4">
-        <Button
-          variant={isMuted ? 'destructive' : 'secondary'}
-          size="icon"
-          className="rounded-full h-12 w-12"
-          onClick={() => setIsMuted(!isMuted)}
-        >
-          {isMuted ? <MicOff /> : <Mic />}
-        </Button>
-        <Button
-          variant={isCameraOff ? 'destructive' : 'secondary'}
-          size="icon"
-          className="rounded-full h-12 w-12"
-          onClick={() => setIsCameraOff(!isCameraOff)}
-        >
-          {isCameraOff ? <VideoOff /> : <Video />}
-        </Button>
-        <Button
-          variant="destructive"
-          size="icon"
-          className="rounded-full h-14 w-14"
-        >
-          <PhoneOff />
-        </Button>
-      </div>
     </div>
   );
 }
 
-function ChatInterface({ patient }: { patient: Patient }) {
-    const [messages, setMessages] = useState([
-        { id: 1, sender: 'patient', text: `Halo Dokter, saya ${patient.name}.` },
-        { id: 2, sender: 'doctor', text: `Halo ${patient.name}, ada yang bisa saya bantu?` },
-    ]);
-    const [newMessage, setNewMessage] = useState('');
-
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (newMessage.trim() === '') return;
-        setMessages([...messages, { id: Date.now(), sender: 'doctor', text: newMessage }]);
-        setNewMessage('');
-        // Simulate patient response
-        setTimeout(() => {
-             setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'patient', text: 'Baik dokter, terima kasih atas informasinya.' }]);
-        }, 1500)
-    }
-
-    return (
-        <div className="flex flex-col h-full">
-            <ScrollArea className="flex-grow p-4 space-y-4">
-                {messages.map(msg => (
-                     <div key={msg.id} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`rounded-lg px-4 py-2 max-w-xs lg:max-w-md ${msg.sender === 'doctor' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                           {msg.text}
-                        </div>
-                    </div>
-                ))}
-            </ScrollArea>
-            <form onSubmit={handleSendMessage} className="flex-shrink-0 p-4 border-t">
-                <div className="relative">
-                    <Input
-                        placeholder="Ketik pesan..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        className="pr-12"
-                    />
-                    <Button type="submit" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
-                        <Send className="h-4 w-4" />
-                    </Button>
-                </div>
-            </form>
-        </div>
-    )
-}
 
 function TeleconsultationContent() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [mode, setMode] = useState<'chat' | 'video' | null>(null);
 
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -249,13 +170,15 @@ function TeleconsultationContent() {
     async function fetchPatients() {
       const fetchedPatients = await getPatients(query);
       setPatients(fetchedPatients);
+       if (fetchedPatients.length > 0) {
+        setSelectedPatient(fetchedPatients[0]);
+      }
     }
     fetchPatients();
   }, [query]);
 
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
-    setMode(null); // Reset mode when a new patient is selected
   };
 
   return (
@@ -275,62 +198,7 @@ function TeleconsultationContent() {
         <div className="lg:col-span-2 h-full">
           <Card className="h-full">
             {selectedPatient ? (
-              <div className="flex flex-col h-full">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>Sesi dengan {selectedPatient.name}</CardTitle>
-                      <CardDescription>
-                        Pilih mode konsultasi di bawah ini.
-                      </CardDescription>
-                    </div>
-                    {mode && (
-                      <div className="flex gap-2">
-                        <Button variant={mode === 'chat' ? 'default' : 'outline'} onClick={() => setMode('chat')}>
-                            <MessageSquare className="mr-2 h-4 w-4" /> Chat
-                        </Button>
-                         <Button variant={mode === 'video' ? 'default' : 'outline'} onClick={() => setMode('video')}>
-                            <Video className="mr-2 h-4 w-4" /> Video
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <Separator />
-                <div className="flex-grow">
-                  {!mode ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-                      <Avatar className="h-24 w-24">
-                        <AvatarImage
-                          src={selectedPatient.avatarUrl}
-                          alt={selectedPatient.name}
-                        />
-                        <AvatarFallback>
-                          {selectedPatient.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <h2 className="text-2xl font-bold">
-                        Mulai Konsultasi dengan {selectedPatient.name}
-                      </h2>
-                      <p className="text-muted-foreground">
-                        Pilih mode konsultasi untuk memulai sesi.
-                      </p>
-                      <div className="flex gap-4 mt-4">
-                        <Button size="lg" onClick={() => setMode('chat')}>
-                          <MessageSquare className="mr-2" /> Mulai Chat
-                        </Button>
-                        <Button size="lg" onClick={() => setMode('video')}>
-                          <Video className="mr-2" /> Mulai Video Call
-                        </Button>
-                      </div>
-                    </div>
-                  ) : mode === 'chat' ? (
-                     <ChatInterface patient={selectedPatient} />
-                  ) : (
-                     <VideoCallInterface patient={selectedPatient} />
-                  )}
-                </div>
-              </div>
+              <WhatsAppIntegration patient={selectedPatient} />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-muted-foreground">
