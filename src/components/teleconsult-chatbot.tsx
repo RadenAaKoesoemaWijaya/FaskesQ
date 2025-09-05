@@ -1,0 +1,152 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import type { Patient } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Send, Bot, User, Loader2, ArrowLeft } from 'lucide-react';
+import { runTeleconsultChatbot } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+type Message = {
+  role: 'user' | 'model';
+  content: string;
+};
+
+interface TeleconsultChatbotProps {
+  patient: Patient;
+  onBack: () => void;
+}
+
+export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps) {
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    if (scrollAreaRef.current) {
+        // A bit of a hack to get the viewport element from Radix UI
+        const viewport = scrollAreaRef.current.querySelector('div');
+        if (viewport) {
+            viewport.scrollTop = viewport.scrollHeight;
+        }
+    }
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input || isLoading) return;
+
+    const userMessage: Message = { role: 'user', content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const result = await runTeleconsultChatbot({
+        patientName: patient.name,
+        history: messages,
+        message: input,
+      });
+
+      if (result.success && result.data) {
+        const modelMessage: Message = { role: 'model', content: result.data.response };
+        setMessages((prev) => [...prev, modelMessage]);
+      } else {
+        throw new Error(result.error || 'Gagal mendapatkan respons dari AI.');
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
+      // Remove the user's message if the API call fails
+      setMessages((prev) => prev.slice(0, prev.length - 1));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+       <div className="flex items-center p-4 border-b">
+         <Button variant="ghost" size="icon" onClick={onBack} className="mr-4">
+            <ArrowLeft />
+         </Button>
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={patient.avatarUrl} alt={patient.name} />
+          <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="ml-4">
+          <h3 className="font-semibold">Konsultasi dengan {patient.name}</h3>
+          <p className="text-sm text-muted-foreground">Didukung oleh AI</p>
+        </div>
+      </div>
+      <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
+        <div className="space-y-4">
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={cn(
+                'flex items-start gap-3',
+                message.role === 'user' ? 'justify-end' : 'justify-start'
+              )}
+            >
+              {message.role === 'model' && (
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
+                </Avatar>
+              )}
+              <div
+                className={cn(
+                  'max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg',
+                  message.role === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted'
+                )}
+              >
+                <p className="text-sm">{message.content}</p>
+              </div>
+               {message.role === 'user' && (
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback><User className="h-5 w-5"/></AvatarFallback>
+                </Avatar>
+              )}
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex items-start gap-3 justify-start">
+                 <Avatar className="h-8 w-8">
+                  <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
+                </Avatar>
+                <div className="px-4 py-2 rounded-lg bg-muted flex items-center">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+      <div className="p-4 border-t">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ketikkan pesan Anda sebagai dokter..."
+            disabled={isLoading}
+            autoComplete='off'
+          />
+          <Button type="submit" disabled={isLoading || !input}>
+            <Send className="h-5 w-5" />
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -14,12 +14,17 @@ import {
   suggestIcd10,
   type SuggestIcd10Input,
   type SuggestIcd10Output,
-} from '@/ai/flows/suggest-treatment';
+} from '@/ai/flows/suggest-icd10-flow';
 import {
     suggestDifferentialDiagnosis,
     type SuggestDifferentialDiagnosisInput,
     type SuggestDifferentialDiagnosisOutput
 } from '@/ai/flows/suggest-differential-diagnosis';
+import {
+  teleconsultChatbot,
+  type TeleconsultChatbotInput,
+  type TeleconsultChatbotOutput,
+} from '@/ai/flows/teleconsult-chatbot-flow';
 import { deletePatient as dbDeletePatient, updatePatient as dbUpdatePatient } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 
@@ -128,4 +133,26 @@ export async function deletePatientAction(id: string) {
         console.error('Error deleting patient:', error);
         return { success: false, error: 'Gagal menghapus pasien.' };
     }
+}
+
+export type { TeleconsultChatbotOutput };
+
+export async function runTeleconsultChatbot(
+  input: TeleconsultChatbotInput
+): Promise<{
+  success: boolean;
+  data?: TeleconsultChatbotOutput;
+  error?: string;
+}> {
+  try {
+    const result = await teleconsultChatbot(input);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Error running teleconsult chatbot:', error);
+    return {
+      success: false,
+      error:
+        'Terjadi kesalahan saat menghubungi chatbot. Silakan coba lagi.',
+    };
+  }
 }

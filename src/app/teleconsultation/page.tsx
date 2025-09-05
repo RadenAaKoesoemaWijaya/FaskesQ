@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { getPatients } from '@/lib/data';
 import type { Patient } from '@/lib/types';
@@ -17,19 +17,15 @@ import { Button } from '@/components/ui/button';
 import {
   Search,
   Video,
-  Send,
-  PhoneOff,
-  Mic,
-  MicOff,
-  VideoOff,
   MessageSquare,
   Phone,
+  Bot,
+  ArrowLeft,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { TeleconsultChatbot } from '@/components/teleconsult-chatbot';
 
 function PatientList({
   patients,
@@ -97,15 +93,16 @@ function PatientList({
   );
 }
 
-function WhatsAppIntegration({ patient }: { patient: Patient }) {
-
-  const formatPhoneNumber = (email: string) => {
-    // This is a placeholder function. In a real app, you'd have a dedicated phone field.
-    // We'll try to extract a number from the email or use a default.
-    // E.g. budi.santoso.6281234567890@example.com -> 6281234567890
+function ConsultationModeSelector({
+  patient,
+  onModeSelect,
+}: {
+  patient: Patient;
+  onModeSelect: (mode: 'ai' | 'whatsapp') => void;
+}) {
+   const formatPhoneNumber = (email: string) => {
     const match = email.match(/(\d{10,})/);
     if (match) return match[0];
-    // return a valid test number if no number is found in email
     return '6281234567890';
   }
 
@@ -116,52 +113,55 @@ function WhatsAppIntegration({ patient }: { patient: Patient }) {
     window.open(url, '_blank');
   };
 
-  const handleWhatsAppVideo = () => {
-    const message = encodeURIComponent('Halo, saya siap untuk memulai sesi video call telekonsultasi kita.');
-    const url = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(url, '_blank');
-  };
-
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
-        <Avatar className="h-24 w-24">
-            <AvatarImage
-            src={patient.avatarUrl}
-            alt={patient.name}
-            />
-            <AvatarFallback>
-            {patient.name.charAt(0)}
-            </AvatarFallback>
-        </Avatar>
-        <h2 className="text-2xl font-bold">
-            Mulai Konsultasi dengan {patient.name}
-        </h2>
-        <p className="text-muted-foreground max-w-sm">
-            Gunakan tombol di bawah untuk memulai sesi chat atau video call dengan pasien melalui WhatsApp.
-        </p>
-        <Alert>
-          <Phone className="h-4 w-4" />
-          <AlertTitle>Nomor WhatsApp Pasien</AlertTitle>
-          <AlertDescription>
-            Akan terhubung ke nomor: <strong>+{phoneNumber}</strong>
-          </AlertDescription>
-        </Alert>
-        <div className="flex gap-4 mt-4">
-            <Button size="lg" onClick={handleWhatsAppChat}>
-            <MessageSquare className="mr-2" /> Mulai Chat WhatsApp
+      <Avatar className="h-24 w-24">
+        <AvatarImage src={patient.avatarUrl} alt={patient.name} />
+        <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+      </Avatar>
+      <h2 className="text-2xl font-bold">
+        Mulai Konsultasi dengan {patient.name}
+      </h2>
+      <p className="text-muted-foreground max-w-sm">
+        Pilih metode telekonsultasi yang ingin Anda gunakan.
+      </p>
+
+      <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full max-w-md">
+        <Card className="flex-1 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'><Bot /> Konsultasi AI</CardTitle>
+            <CardDescription>
+              Lakukan simulasi konsultasi dengan chatbot AI.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => onModeSelect('ai')}>
+              Mulai Konsultasi AI
             </Button>
-            <Button size="lg" onClick={handleWhatsAppVideo} variant="outline">
-            <Video className="mr-2" /> Video Call via WhatsApp
+          </CardContent>
+        </Card>
+        <Card className="flex-1 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'><Phone /> Via WhatsApp</CardTitle>
+            <CardDescription>
+              Terhubung langsung dengan pasien melalui WhatsApp.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" variant="outline" onClick={handleWhatsAppChat}>
+              <MessageSquare className="mr-2" /> Mulai Chat
             </Button>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
 
-
 function TeleconsultationContent() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [consultationMode, setConsultationMode] = useState<'ai' | 'whatsapp' | null>(null);
 
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -170,15 +170,44 @@ function TeleconsultationContent() {
     async function fetchPatients() {
       const fetchedPatients = await getPatients(query);
       setPatients(fetchedPatients);
-       if (fetchedPatients.length > 0) {
+      if (fetchedPatients.length > 0 && !selectedPatient) {
         setSelectedPatient(fetchedPatients[0]);
       }
     }
     fetchPatients();
-  }, [query]);
+  }, [query, selectedPatient]);
 
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
+    setConsultationMode(null); // Reset mode when patient changes
+  };
+  
+  const handleBackToSelection = () => {
+    setConsultationMode(null);
+  }
+
+  const renderContent = () => {
+    if (!selectedPatient) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center text-muted-foreground">
+            <p>Pilih pasien dari daftar di sebelah kiri</p>
+            <p>untuk memulai sesi telekonsultasi.</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (consultationMode === 'ai') {
+        return <TeleconsultChatbot patient={selectedPatient} onBack={handleBackToSelection} />;
+    }
+
+    return (
+      <ConsultationModeSelector
+        patient={selectedPatient}
+        onModeSelect={setConsultationMode}
+      />
+    );
   };
 
   return (
@@ -196,17 +225,8 @@ function TeleconsultationContent() {
           />
         </div>
         <div className="lg:col-span-2 h-full">
-          <Card className="h-full">
-            {selectedPatient ? (
-              <WhatsAppIntegration patient={selectedPatient} />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-muted-foreground">
-                  <p>Pilih pasien dari daftar di sebelah kiri</p>
-                  <p>untuk memulai sesi telekonsultasi.</p>
-                </div>
-              </div>
-            )}
+          <Card className="h-full flex flex-col">
+            {renderContent()}
           </Card>
         </div>
       </div>
@@ -215,9 +235,9 @@ function TeleconsultationContent() {
 }
 
 export default function TeleconsultationPage() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <TeleconsultationContent />
-        </Suspense>
-    )
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TeleconsultationContent />
+    </Suspense>
+  );
 }
