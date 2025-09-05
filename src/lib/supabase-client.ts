@@ -1,21 +1,28 @@
-
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from './types-supabase';
+import { Pool } from 'pg';
 
 // --- PENTING ---
-// Kredensial Supabase disematkan di sini untuk tujuan pengembangan agar aplikasi dapat berjalan.
-// Untuk produksi, SANGAT DISARANKAN untuk memindahkan ini ke variabel lingkungan (misalnya, file .env.local)
-// dan menggunakan process.env.NEXT_PUBLIC_SUPABASE_URL dan process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.
+// Skrip ini mengasumsikan Anda menjalankan aplikasi di lingkungan Netlify
+// di mana variabel lingkungan DATABASE_URL secara otomatis disediakan oleh
+// addon Neon Database.
 
-const supabaseUrl = 'https://example.supabase.co';
-const supabaseAnonKey = 'example-anon-key';
+// Untuk pengembangan lokal, Anda harus membuat file .env dan menambahkan
+// string koneksi Neon Anda sendiri, seperti ini:
+// DATABASE_URL="postgresql://user:password@host:port/dbname?sslmode=require"
 
+const connectionString = process.env.DATABASE_URL;
 
-if (!supabaseUrl) {
-    throw new Error("Penting: Variabel lingkungan NEXT_PUBLIC_SUPABASE_URL tidak ditemukan. Pastikan Anda membuat file .env dan menambahkannya.");
+if (!connectionString) {
+    throw new Error("Penting: Variabel lingkungan DATABASE_URL tidak ditemukan. Pastikan variabel tersebut diatur di lingkungan Anda.");
 }
-if (!supabaseAnonKey) {
-    throw new Error("Penting: Variabel lingkungan NEXT_PUBLIC_SUPABASE_ANON_KEY tidak ditemukan. Pastikan Anda membuat file .env dan menambahkannya.");
-}
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+const pool = new Pool({
+  connectionString,
+});
+
+export async function query(text: string, params: any[]) {
+  const start = Date.now();
+  const res = await pool.query(text, params);
+  const duration = Date.now() - start;
+  console.log('executed query', { text, duration, rows: res.rowCount });
+  return res;
+}
