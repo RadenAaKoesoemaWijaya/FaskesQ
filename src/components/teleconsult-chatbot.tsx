@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 type Message = {
-  role: 'user' | 'model';
+  role: 'user' | 'model' | 'tool';
   content: string;
 };
 
@@ -29,9 +29,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
     if (scrollAreaRef.current) {
-        // A bit of a hack to get the viewport element from Radix UI
         const viewport = scrollAreaRef.current.querySelector('div');
         if (viewport) {
             viewport.scrollTop = viewport.scrollHeight;
@@ -50,9 +48,10 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
 
     try {
       const result = await runTeleconsultChatbot({
+        patientId: patient.id,
         patientName: patient.name,
+        patientDob: patient.dateOfBirth,
         history: messages,
-        message: input,
       });
 
       if (result.success && result.data) {
@@ -67,7 +66,6 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
         title: 'Error',
         description: error.message,
       });
-      // Remove the user's message if the API call fails
       setMessages((prev) => prev.slice(0, prev.length - 1));
     } finally {
       setIsLoading(false);

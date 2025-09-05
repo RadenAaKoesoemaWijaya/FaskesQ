@@ -10,10 +10,29 @@ export type PatientRegistrationData = {
   medicalRecordNumber: string;
 }
 
+export type ScreeningQuestion = {
+  id: string;
+  text: string;
+};
+
+export type ScreeningAnswer = {
+  questionId: string;
+  questionText: string;
+  answer: string;
+}
+
+export type ScreeningResult = {
+  id: string;
+  date: string;
+  clusterName: string;
+  answers: ScreeningAnswer[];
+}
+
 export type Patient = PatientRegistrationData & {
   id: string;
   avatarUrl: string;
   history: Examination[];
+  screeningHistory?: ScreeningResult[];
 };
 
 export type Examination = {
@@ -37,3 +56,14 @@ export type Testimonial = TestimonialSubmissionData & {
   id: string;
   date: string;
 };
+
+
+export type ScreeningCluster = {
+    id: string;
+    name: string;
+    ageRange: {
+        min: number;
+        max: number;
+    };
+    questions: ScreeningQuestion[];
+}

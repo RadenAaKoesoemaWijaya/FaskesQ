@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { use } from 'react';
@@ -21,8 +19,8 @@ import { AnamnesisForm } from '@/components/anamnesis-form';
 import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
-import type { Patient } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit } from 'lucide-react';
+import type { Patient, ScreeningResult } from '@/lib/types';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit, ShieldQuestion } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState } from 'react';
@@ -33,6 +31,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { type MedicalScribeOutput } from '@/app/actions';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const diagnosisSchema = z.object({
   value: z.string().min(1, 'Diagnosis tidak boleh kosong.'),
@@ -250,6 +249,56 @@ function MedicalHistory({ patient }: { patient: Patient }) {
     )
 }
 
+function ScreeningHistory({ patient }: { patient: Patient }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Riwayat Skrining Kesehatan</CardTitle>
+        <CardDescription>Hasil skrining kesehatan yang dilakukan melalui telekonsultasi AI.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {patient.screeningHistory && patient.screeningHistory.length > 0 ? (
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            {patient.screeningHistory.map((result: ScreeningResult) => (
+              <AccordionItem key={result.id} value={result.id} className="border rounded-lg px-4">
+                <AccordionTrigger>
+                  <div className='flex justify-between w-full pr-4'>
+                    <span>{result.clusterName}</span>
+                    <span className="text-muted-foreground font-normal">
+                      {new Date(result.date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Pertanyaan</TableHead>
+                        <TableHead>Jawaban</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {result.answers.map(answer => (
+                        <TableRow key={answer.questionId}>
+                          <TableCell>{answer.questionText}</TableCell>
+                          <TableCell className="font-medium">{answer.answer}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-4">Belum ada riwayat skrining.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
 function NewExaminationSection({ patient }: { patient: Patient }) {
   const methods = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -466,7 +515,7 @@ function PatientDetailPageContent({ id }: { id: string }) {
         </div>
       </PageHeader>
       <Tabs defaultValue="examination" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-[600px]">
+        <TabsList className="grid w-full grid-cols-4 md:w-[800px]">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" /> Profil Pasien
           </TabsTrigger>
@@ -475,6 +524,9 @@ function PatientDetailPageContent({ id }: { id: string }) {
           </TabsTrigger>
            <TabsTrigger value="history">
             <History className="mr-2 h-4 w-4" /> Riwayat Medis
+          </TabsTrigger>
+           <TabsTrigger value="screening">
+            <ShieldQuestion className="mr-2 h-4 w-4" /> Riwayat Skrining
           </TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-6">
@@ -485,6 +537,9 @@ function PatientDetailPageContent({ id }: { id: string }) {
         </TabsContent>
          <TabsContent value="history" className="mt-6">
             <MedicalHistory patient={patient} />
+        </TabsContent>
+         <TabsContent value="screening" className="mt-6">
+            <ScreeningHistory patient={patient} />
         </TabsContent>
       </Tabs>
     </div>

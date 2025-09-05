@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, UserPlus, MessageSquareHeart, Laptop } from 'lucide-react';
+import { LayoutDashboard, UserPlus, MessageSquareHeart, Laptop, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   SidebarMenu,
@@ -13,12 +13,13 @@ import {
 const navItems = [
   { href: '/', label: 'Dasbor', icon: LayoutDashboard },
   { href: '/patients/new', label: 'Daftarkan Pasien', icon: UserPlus },
-   { href: '/teleconsultation', label: 'Telekonsultasi', icon: Laptop },
+  { href: '/teleconsultation', label: 'Telekonsultasi', icon: Laptop },
   {
     href: '/testimonials',
     label: 'Testimoni',
     icon: MessageSquareHeart,
   },
+  { href: '/screening-settings', label: 'Pengaturan Skrining', icon: Settings },
 ];
 
 export function MainNav() {
