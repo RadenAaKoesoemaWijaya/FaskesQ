@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Bot, Loader2, AlertTriangle } from 'lucide-react';
+import { Mic, MicOff, Bot, Loader2, AlertTriangle, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from './ui/textarea';
 import { runMedicalScribe, type MedicalScribeOutput } from '@/app/actions';
@@ -31,13 +31,10 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
       recognition.lang = 'id-ID';
 
       recognition.onresult = (event: any) => {
-        let interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
+            finalTranscript += event.results[i][0].transcript + ' ';
           }
         }
         setTranscript(prev => prev + finalTranscript);
@@ -73,11 +70,18 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
       recognitionRef.current?.stop();
       setIsRecording(false);
     } else {
-      setTranscript('');
       recognitionRef.current?.start();
       setIsRecording(true);
     }
   };
+
+  const handleResetTranscript = () => {
+    setTranscript('');
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    }
+  }
 
   const handleProcessTranscript = async () => {
     if (!transcript) {
@@ -134,7 +138,11 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                     <Button onClick={handleToggleRecording} size="lg" className="w-full sm:w-auto">
                         {isRecording ? <MicOff className="mr-2" /> : <Mic className="mr-2" />}
-                        {isRecording ? 'Berhenti Merekam' : 'Mulai Merekam'}
+                        {isRecording ? 'Jeda Merekam' : 'Mulai/Lanjutkan Merekam'}
+                    </Button>
+                     <Button onClick={handleResetTranscript} size="lg" variant="outline" className="w-full sm:w-auto">
+                        <RotateCcw className="mr-2" />
+                        Reset
                     </Button>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1">
                         {isRecording && <Loader2 className="animate-spin h-4 w-4" />}

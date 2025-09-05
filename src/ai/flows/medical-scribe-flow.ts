@@ -91,20 +91,20 @@ const prompt = ai.definePrompt({
   name: 'medicalScribePrompt',
   input: {schema: MedicalScribeInputSchema},
   output: {schema: MedicalScribeOutputSchema},
-  prompt: `You are an expert medical scribe AI. Your task is to listen to a conversation between a doctor and a patient and accurately fill out the medical record based on the information provided in the transcript.
+  prompt: `Anda adalah AI ahli pencatat medis (medical scribe). Tugas Anda adalah mendengarkan percakapan antara dokter dan pasien, lalu mengisi rekam medis secara akurat berdasarkan informasi dalam transkrip. Gunakan Bahasa Indonesia yang baik dan benar.
 
-  Carefully analyze the following transcript and extract the required information. Pay close attention to details mentioned by both the patient and the doctor. This includes:
-  1. Anamnesis (main complaint, history of present illness, past history, allergies).
-  2. A complete physical examination (vital signs, head-to-toe examination).
-  3. Results from supporting examinations (laboratory, radiology, and other tests) if they are discussed.
-  4. The assessment and plan, including prognosis, patient education, prescribed medications, and other actions.
+  Analisis transkrip berikut dengan saksama dan ekstrak informasi yang diperlukan. Perhatikan detail yang disebutkan oleh pasien dan dokter. Ini mencakup:
+  1. Anamnesis (keluhan utama, riwayat penyakit sekarang, riwayat dahulu, alergi).
+  2. Pemeriksaan fisik lengkap (tanda vital, pemeriksaan head-to-toe).
+  3. Hasil pemeriksaan penunjang (laboratorium, radiologi, dan tes lain) jika dibicarakan.
+  4. Penilaian dan rencana, termasuk prognosis, edukasi pasien, resep obat, dan tindakan lainnya.
 
-  If a piece of information is not mentioned in the transcript, leave the corresponding field empty.
+  Jika ada informasi yang tidak disebutkan dalam transkrip, biarkan kolom yang bersangkutan kosong. Pastikan semua output dalam Bahasa Indonesia yang formal dan sesuai standar medis.
 
-  Transcript:
+  Transkrip:
   {{{transcript}}}
 
-  Based on this transcript, please populate the anamnesis, the full physical examination, any mentioned supporting examination results, and the complete treatment plan.
+  Berdasarkan transkrip ini, harap isi anamnesis, pemeriksaan fisik lengkap, hasil pemeriksaan penunjang yang disebutkan, dan rencana perawatan lengkap.
   `,
 });
 
