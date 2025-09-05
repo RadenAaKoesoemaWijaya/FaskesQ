@@ -63,6 +63,14 @@ function AccountSettings() {
                         <Label htmlFor="specialty">Spesialisasi</Label>
                         <Input id="specialty" defaultValue="Dokter Umum" />
                     </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="strNumber">Nomor Surat Tanda Registrasi (STR)</Label>
+                        <Input id="strNumber" defaultValue="1234567890123456" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="sipNumber">Nomor Surat Ijin Praktek (SIP)</Label>
+                        <Input id="sipNumber" defaultValue="SIP/123/456/2024" />
+                    </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="email">Alamat Email</Label>

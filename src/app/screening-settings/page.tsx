@@ -305,7 +305,7 @@ export default function ScreeningSettingsPage() {
   return (
     <div className="animate-in fade-in-50">
       <PageHeader
-        title="Pengaturan Skrining Kesehatan"
+        title="Skrining Kesehatan"
         subtitle="Kelola daftar pertanyaan skrining berdasarkan klaster usia."
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

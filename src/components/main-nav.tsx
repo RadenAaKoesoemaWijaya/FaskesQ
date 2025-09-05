@@ -25,8 +25,8 @@ const navItems = [
     icon: MessageSquareHeart,
     roles: ['doctor', 'nurse', 'administrator']
   },
-  { href: '/screening-settings', label: 'Pengaturan Skrining', icon: Settings, roles: ['doctor'] },
-  { href: '/loginizer', label: 'Loginizer', icon: Users, roles: ['doctor', 'nurse', 'administrator'] },
+  { href: '/screening-settings', label: 'Skrining Kesehatan', icon: Settings, roles: ['doctor'] },
+  { href: '/loginizer', label: 'Hak Akses', icon: Users, roles: ['doctor', 'nurse', 'administrator'] },
 ];
 
 export function MainNav() {
@@ -44,7 +44,7 @@ export function MainNav() {
       <SidebarMenu>
         {filteredNavItems.map((item) => (
           <SidebarMenuItem key={item.href}>
-            <Link href={item.href} passHref>
+            <Link href={item.href}>
               <SidebarMenuButton
                 isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                 tooltip={item.label}

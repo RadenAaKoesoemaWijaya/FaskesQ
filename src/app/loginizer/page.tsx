@@ -14,8 +14,8 @@ const features = [
   { id: 'register', label: 'Daftarkan Pasien', icon: UserPlus, roles: ['doctor', 'nurse', 'administrator'] },
   { id: 'teleconsultation', label: 'Telekonsultasi', icon: Laptop, roles: ['doctor'] },
   { id: 'testimonials', label: 'Testimoni', icon: MessageSquareHeart, roles: ['doctor', 'nurse', 'administrator'] },
-  { id: 'screening', label: 'Pengaturan Skrining', icon: Settings, roles: ['doctor'] },
-  { id: 'loginizer', label: 'Loginizer', icon: Users, roles: ['doctor'] },
+  { id: 'screening', label: 'Skrining Kesehatan', icon: Settings, roles: ['doctor'] },
+  { id: 'loginizer', label: 'Hak Akses', icon: Users, roles: ['doctor', 'nurse', 'administrator'] },
 ];
 
 
@@ -25,7 +25,7 @@ export default function LoginizerPage() {
     return (
         <div className="animate-in fade-in-50">
             <PageHeader 
-                title="Loginizer - Manajemen Akses"
+                title="Hak Akses Pengguna"
                 subtitle="Atur peran dan hak akses untuk setiap pengguna di sistem Anda."
             />
             
