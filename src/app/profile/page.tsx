@@ -9,7 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { Camera, Mail, Phone, Shield, User } from 'lucide-react'
+import { Camera, Mail, Phone, Shield, User, PenSquare } from 'lucide-react'
+import Image from 'next/image'
+
 
 function ProfileCard() {
   return (
@@ -70,7 +72,23 @@ function AccountSettings() {
                     <Label htmlFor="phoneNumber">Nomor Telepon</Label>
                     <Input id="phoneNumber" type="tel" defaultValue="+62 812-3456-7890" />
                 </div>
-                 <div className="flex justify-end">
+                <Separator />
+                <div className="space-y-4">
+                    <div className='flex items-center gap-2'>
+                        <PenSquare className="h-5 w-5 text-muted-foreground" />
+                        <h3 className="text-lg font-medium">Tanda Tangan Digital</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Tanda tangan ini akan digunakan pada dokumen medis seperti surat rujukan.
+                    </p>
+                    <div className="border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/50 min-h-[120px]">
+                        <Image src="https://placehold.co/200x50/png?text=Tanda+Tangan" alt="Tanda Tangan Digital" width={200} height={50} data-ai-hint="signature" />
+                    </div>
+                    <Button variant="outline">
+                        Unggah Tanda Tangan Baru
+                    </Button>
+                </div>
+                 <div className="flex justify-end pt-6">
                     <Button>Simpan Perubahan</Button>
                 </div>
             </CardContent>

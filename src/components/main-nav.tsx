@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, UserPlus, MessageSquareHeart, Laptop, Settings } from 'lucide-react';
+import { LayoutDashboard, UserPlus, MessageSquareHeart, Laptop, Settings, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   SidebarMenu,
@@ -20,6 +20,7 @@ const navItems = [
     icon: MessageSquareHeart,
   },
   { href: '/screening-settings', label: 'Pengaturan Skrining', icon: Settings },
+  { href: '/loginizer', label: 'Loginizer', icon: Users },
 ];
 
 export function MainNav() {
