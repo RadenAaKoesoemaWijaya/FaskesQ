@@ -38,7 +38,6 @@ function PatientList({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -58,7 +57,7 @@ function PatientList({
             name="q"
             placeholder="Cari pasien..."
             className="w-full bg-background pl-8"
-            defaultValue={query}
+            defaultValue={searchParams.get('q') || ''}
           />
         </form>
       </CardHeader>
@@ -100,16 +99,25 @@ function ConsultationModeSelector({
   patient: Patient;
   onModeSelect: (mode: 'ai' | 'whatsapp') => void;
 }) {
-   const formatPhoneNumber = (email: string) => {
-    const match = email.match(/(\d{10,})/);
-    if (match) return match[0];
+   const formatPhoneNumber = (contact: string) => {
+    // Basic attempt to extract a valid phone number.
+    // In a real app, this should be a robust library.
+    const digits = contact.replace(/\D/g, '');
+    if (digits.startsWith('08')) {
+        return '62' + digits.substring(1);
+    }
+    if (digits.startsWith('62')) {
+        return digits;
+    }
+    // Fallback for demo purposes
     return '6281234567890';
   }
 
   const phoneNumber = formatPhoneNumber(patient.contact);
 
   const handleWhatsAppChat = () => {
-    const url = `https://wa.me/${phoneNumber}`;
+    const message = encodeURIComponent(`Halo ${patient.name}, ini adalah pesan dari FaskesQ.`);
+    const url = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(url, '_blank');
   };
 
@@ -162,20 +170,27 @@ function TeleconsultationContent() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [consultationMode, setConsultationMode] = useState<'ai' | 'whatsapp' | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
 
   useEffect(() => {
     async function fetchPatients() {
+      setLoading(true);
       const fetchedPatients = await getPatients(query);
       setPatients(fetchedPatients);
       if (fetchedPatients.length > 0 && !selectedPatient) {
-        setSelectedPatient(fetchedPatients[0]);
+        // Find if a patient was pre-selected from query params
+        const preSelectedId = searchParams.get('patientId');
+        const preSelected = fetchedPatients.find(p => p.id === preSelectedId);
+        setSelectedPatient(preSelected || fetchedPatients[0]);
       }
+      setLoading(false);
     }
     fetchPatients();
-  }, [query, selectedPatient]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -187,6 +202,9 @@ function TeleconsultationContent() {
   }
 
   const renderContent = () => {
+    if (loading) {
+        return <div className="flex items-center justify-center h-full">Memuat data pasien...</div>;
+    }
     if (!selectedPatient) {
       return (
         <div className="flex items-center justify-center h-full">

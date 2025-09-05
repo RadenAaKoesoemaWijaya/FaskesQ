@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PlusCircle, Search, Users, Clock, DollarSign, BarChart, Trash2, Edit, MoreVertical } from 'lucide-react';
@@ -106,14 +106,25 @@ function PatientCard({ patient, onDelete }: { patient: Patient, onDelete: (id: s
 }
 
 function SearchBar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const searchQuery = formData.get('q') as string;
+    router.push(`/?q=${searchQuery}`);
+  };
+
   return (
-    <form className="relative w-full max-w-sm">
+    <form onSubmit={handleSearch} className="relative w-full max-w-sm">
       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
       <Input
         type="search"
         name="q"
-        placeholder="Cari pasien (Nama, ID, No. RM)..."
+        placeholder="Cari pasien (Nama, No. RM)..."
         className="w-full bg-background pl-8"
+        defaultValue={searchParams.get('q') || ''}
       />
     </form>
   )
@@ -145,12 +156,20 @@ function DashboardContent() {
   useEffect(() => {
     async function fetchPatients() {
       setLoading(true);
-      const fetchedPatients = await getPatients(query);
-      setPatients(fetchedPatients);
+      try {
+        const fetchedPatients = await getPatients(query);
+        setPatients(fetchedPatients);
+      } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: "Gagal Mengambil Data Pasien",
+            description: (error as Error).message,
+         });
+      }
       setLoading(false);
     }
     fetchPatients();
-  }, [query]);
+  }, [query, toast]);
 
   const handleDeleteRequest = (id: string, name: string) => {
     setPatientToDelete({ id, name });
@@ -306,8 +325,8 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <React.Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <DashboardContent />
-    </React.Suspense>
+    </Suspense>
   )
 }

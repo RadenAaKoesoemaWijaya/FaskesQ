@@ -6,6 +6,7 @@ import { getTestimonials } from "@/lib/data";
 import { Testimonial } from "@/lib/types";
 import { Star, StarHalf, MessageSquareQuote } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 function Rating({ rating }: { rating: number }) {
     const fullStars = Math.floor(rating);
@@ -43,14 +44,23 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 
 export default function TestimonialsPage() {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+    const { toast } = useToast();
 
     useEffect(() => {
         async function loadTestimonials() {
-            const data = await getTestimonials();
-            setTestimonials(data);
+            try {
+                const data = await getTestimonials();
+                setTestimonials(data);
+            } catch (error) {
+                toast({
+                    title: "Gagal Memuat Testimoni",
+                    description: (error as Error).message,
+                    variant: 'destructive',
+                });
+            }
         }
         loadTestimonials();
-    }, []);
+    }, [toast]);
 
     return (
         <div className="animate-in fade-in-50">

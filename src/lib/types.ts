@@ -1,3 +1,4 @@
+
 export type PatientRegistrationData = {
   name: string;
   dateOfBirth: string;
@@ -33,6 +34,7 @@ export type Patient = PatientRegistrationData & {
   avatarUrl: string;
   history: Examination[];
   screeningHistory?: ScreeningResult[];
+  created_at: string;
 };
 
 export type Examination = {
@@ -44,6 +46,8 @@ export type Examination = {
   diagnosis: string;
   prescriptionsAndActions: string;
   medicalResume: string;
+  patient_id: string;
+  created_at: string;
 };
 
 export type TestimonialSubmissionData = {
@@ -55,6 +59,7 @@ export type TestimonialSubmissionData = {
 export type Testimonial = TestimonialSubmissionData & {
   id: string;
   date: string;
+  created_at: string;
 };
 
 
@@ -66,4 +71,5 @@ export type ScreeningCluster = {
         max: number;
     };
     questions: ScreeningQuestion[];
+    created_at: string;
 }
