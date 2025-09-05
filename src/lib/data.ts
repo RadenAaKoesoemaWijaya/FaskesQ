@@ -1,5 +1,6 @@
 
-import { sql } from '@neondatabase/serverless';
+
+import { sql } from './db';
 import type { Patient, PatientRegistrationData, Testimonial, TestimonialSubmissionData, ScreeningCluster, ScreeningQuestion, ScreeningResult } from './types';
 
 // Helper to handle potential JSON parsing errors
@@ -165,6 +166,22 @@ export async function addScreeningCluster(data: Omit<ScreeningCluster, 'id' | 'q
     }
 }
 
+export async function updateScreeningCluster(cluster: ScreeningCluster): Promise<ScreeningCluster> {
+    try {
+        const result = await sql`
+            UPDATE screening_clusters
+            SET name = ${cluster.name}, "ageRange" = ${JSON.stringify(cluster.ageRange)}
+            WHERE id = ${cluster.id}
+            RETURNING *
+        `;
+        return result.rows[0] as ScreeningCluster;
+    } catch(e) {
+        console.error('Error updating screening cluster:', e);
+        throw new Error('Gagal memperbarui klaster skrining.');
+    }
+}
+
+
 export async function deleteScreeningCluster(id: string): Promise<void> {
     try {
         // Must delete questions first due to foreign key constraint
@@ -218,8 +235,8 @@ export async function deleteScreeningQuestion(clusterId: string, questionId: str
 export async function saveScreeningResult(patientId: string, result: Omit<ScreeningResult, 'id' | 'date' | 'created_at'>): Promise<void> {
     try {
         await sql`
-            INSERT INTO screening_results (patient_id, "clusterName", answers)
-            VALUES (${patientId}, ${result.clusterName}, ${JSON.stringify(result.answers)})
+            INSERT INTO screening_results (patient_id, "clusterName", answers, date)
+            VALUES (${patientId}, ${result.clusterName}, ${JSON.stringify(result.answers)}, ${new Date().toISOString()})
         `;
     } catch (error) {
         console.error('Error saving screening result:', error);
