@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   FormControl,
@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Printer, Save, Search, Share2, Loader2, Info, BrainCircuit } from 'lucide-react';
+import { Printer, Search, Loader2, Info, BrainCircuit, PlusCircle, Trash2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
@@ -24,11 +24,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { SuggestIcd10Output, SuggestDifferentialDiagnosisOutput } from '@/app/actions';
 import { Badge } from './ui/badge';
+import { cn } from '@/lib/utils';
 
 function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient: Patient, referralData: any, medicalResume: string }) {
     const today = new Date().toLocaleDateString('id-ID', {
@@ -97,8 +97,12 @@ function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient
 }
 
 export function DiagnosisForm({ patient }: { patient: Patient }) {
-  const { control, getValues, watch, setValue } = useFormContext();
+  const { control, getValues, watch, setValue, formState: { errors } } = useFormContext();
   const { toast } = useToast();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "diagnoses"
+  });
 
   // States for Referral
   const isReferred = watch('referral.isReferred');
@@ -109,7 +113,7 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
   const [isSearchingIcd, setIsSearchingIcd] = useState(false);
   const [icdSuggestions, setIcdSuggestions] = useState<SuggestIcd10Output['suggestions']>([]);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
-  const [searchTarget, setSearchTarget] = useState<'primary' | 'secondary' | null>(null);
+  const [searchTargetIndex, setSearchTargetIndex] = useState<number | null>(null);
 
   // States for AI Differential Diagnosis
   const [showAiDiagnosis, setShowAiDiagnosis] = useState(false);
@@ -117,10 +121,9 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
   const [diffDiagnosis, setDiffDiagnosis] = useState<string[]>([]);
 
 
-  const handleSearchIcd = async (target: 'primary' | 'secondary') => {
-      setSearchTarget(target);
-      const queryField = target === 'primary' ? 'primaryDiagnosis' : 'secondaryDiagnosis';
-      const query = getValues(queryField);
+  const handleSearchIcd = async (index: number) => {
+      setSearchTargetIndex(index);
+      const query = getValues(`diagnoses.${index}.value`);
 
       if (!query) {
           toast({
@@ -151,9 +154,8 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
   }
 
   const handleSelectIcd = (suggestion: { code: string, description: string }) => {
-      if (searchTarget) {
-          const field = searchTarget === 'primary' ? 'primaryDiagnosis' : 'secondaryDiagnosis';
-          setValue(field, `${suggestion.code} - ${suggestion.description}`);
+      if (searchTargetIndex !== null) {
+          setValue(`diagnoses.${searchTargetIndex}.value`, `${suggestion.code} - ${suggestion.description}`);
           setIsSearchDialogOpen(false);
       }
   }
@@ -193,16 +195,32 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
         setIsSuggesting(false);
     }
   }
+  
+  const handleAddDiagnosisFromAi = (diagnosis: string) => {
+    // If first diagnosis is empty, set it. Otherwise, append.
+    const diagnoses = getValues('diagnoses');
+    if (diagnoses.length === 1 && !diagnoses[0].value) {
+        setValue('diagnoses.0.value', diagnosis);
+    } else {
+        append({ value: diagnosis });
+    }
+    toast({
+        title: "Diagnosis Ditambahkan",
+        description: `"${diagnosis}" telah ditambahkan ke daftar.`,
+    });
+  }
 
   const handlePrintReferral = async () => {
     setIsPrinting(true);
     try {
         const formData = getValues();
+        const diagnosisText = formData.diagnoses.map((d: {value: string}) => d.value).join(', ');
+
         const input = {
             anamnesis: `Keluhan Utama: ${formData.mainComplaint}. Riwayat Sekarang: ${formData.presentIllness}. Riwayat Dahulu: ${formData.pastMedicalHistory}. Alergi: ${formData.drugAllergy}.`,
             physicalExamination: `Kesadaran: ${formData.consciousness}, TD: ${formData.bloodPressure}, Nadi: ${formData.heartRate}, RR: ${formData.respiratoryRate}, Suhu: ${formData.temperature}.`,
             supportingExaminations: "Hasil penunjang terlampir jika ada.",
-            diagnosis: `Primer: ${formData.primaryDiagnosis}. Sekunder: ${formData.secondaryDiagnosis}`,
+            diagnosis: diagnosisText,
             prescriptionsAndActions: "Terapi dan tindakan terlampir.",
         };
         const result = await getMedicalResume(input);
@@ -264,10 +282,11 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
                     {isSuggesting && <p className="text-sm text-muted-foreground">AI sedang menganalisis data anamnesis dan pemeriksaan fisik...</p>}
                     {diffDiagnosis.length > 0 && (
                         <div>
-                             <h4 className="font-semibold text-sm mb-2">Hasil Rekomendasi:</h4>
+                             <h4 className="font-semibold text-sm mb-2">Klik untuk menambahkan ke daftar diagnosis:</h4>
                              <div className="flex flex-wrap gap-2">
                                 {diffDiagnosis.map((diag, i) => (
-                                    <Badge key={i} variant="secondary" className="cursor-pointer" onClick={() => setValue('primaryDiagnosis', diag)}>
+                                    <Badge key={i} variant="secondary" className="cursor-pointer" onClick={() => handleAddDiagnosisFromAi(diag)}>
+                                        <PlusCircle className="mr-2 h-3 w-3" />
                                         {diag}
                                     </Badge>
                                 ))}
@@ -279,43 +298,51 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
         </div>
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-            control={control}
-            name="primaryDiagnosis"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Diagnosis Primer</FormLabel>
-                <div className="flex gap-2">
-                    <FormControl>
-                    <Input placeholder="Contoh: Common cold" {...field} />
-                    </FormControl>
-                    <Button type="button" variant="outline" size="icon" onClick={() => handleSearchIcd('primary')}>
-                        <Search className="h-4 w-4" />
-                    </Button>
+        <div className="space-y-4">
+             {fields.map((field, index) => (
+                <div key={field.id} className={cn("p-4 border rounded-lg", index === 0 && "border-primary/50 bg-primary/5")}>
+                    <FormField
+                    control={control}
+                    name={`diagnoses.${index}.value`}
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>{index === 0 ? 'Diagnosis Kerja' : `Diagnosis Banding ${index}`}</FormLabel>
+                        <div className="flex gap-2">
+                            <FormControl>
+                            <Input placeholder="Contoh: Common cold" {...field} />
+                            </FormControl>
+                            <Button type="button" variant="outline" size="icon" onClick={() => handleSearchIcd(index)}>
+                                <Search className="h-4 w-4" />
+                            </Button>
+                             {fields.length > 1 && (
+                                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
                 </div>
-                <FormMessage />
-                </FormItem>
+            ))}
+            {errors.diagnoses && !errors.diagnoses.root && (
+                <p className="text-sm font-medium text-destructive">
+                    {(errors.diagnoses as any)?.message}
+                </p>
             )}
-            />
-            <FormField
-            control={control}
-            name="secondaryDiagnosis"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Diagnosis Sekunder</FormLabel>
-                 <div className="flex gap-2">
-                    <FormControl>
-                    <Input placeholder="Contoh: Diabetes mellitus" {...field} />
-                    </FormControl>
-                     <Button type="button" variant="outline" size="icon" onClick={() => handleSearchIcd('secondary')}>
-                        <Search className="h-4 w-4" />
-                    </Button>
-                </div>
-                <FormMessage />
-                </FormItem>
+            {fields.length < 10 && (
+                 <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => append({ value: '' })}
+                >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Tambah Diagnosis
+                </Button>
             )}
-            />
         </div>
       </div>
       

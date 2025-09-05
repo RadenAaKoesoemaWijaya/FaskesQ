@@ -34,6 +34,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { type MedicalScribeOutput } from '@/app/actions';
 
+const diagnosisSchema = z.object({
+  value: z.string().min(1, 'Diagnosis tidak boleh kosong.'),
+});
+
 const formSchema = z.object({
   // Anamnesis
   mainComplaint: z.string().min(1, 'Keluhan utama tidak boleh kosong.'),
@@ -103,8 +107,7 @@ const formSchema = z.object({
     notes: z.string().optional(),
   }).optional(),
   // Diagnosis
-  primaryDiagnosis: z.string().min(1, 'Diagnosis primer harus diisi.'),
-  secondaryDiagnosis: z.string().optional(),
+  diagnoses: z.array(diagnosisSchema).min(1, 'Minimal harus ada satu diagnosis kerja.').max(10, 'Maksimal 10 diagnosis.'),
   prognosis: z.string().optional(),
   patientEducation: z.string().optional(),
   referral: z.object({
@@ -297,8 +300,7 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
         other: {},
         notes: ''
       },
-      primaryDiagnosis: '',
-      secondaryDiagnosis: '',
+      diagnoses: [{ value: '' }],
       prognosis: '',
       patientEducation: '',
       referral: {
@@ -495,9 +497,9 @@ export default function PatientDetailPage({
 }: {
   params: { id: string };
 }) {
-  const id = React.use(params);
+  const { id } = use(params);
   if (!id) {
     notFound();
   }
-  return <PatientDetailPageContent id={id.id} />;
+  return <PatientDetailPageContent id={id} />;
 }
