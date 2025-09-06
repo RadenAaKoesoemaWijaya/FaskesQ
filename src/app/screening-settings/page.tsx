@@ -84,13 +84,13 @@ function QuestionItem({
   );
 }
 
-function ClusterCard({
-  cluster,
+function ScreeningItemCard({
+  screening,
   onUpdate,
   onDelete,
 }: {
-  cluster: ScreeningCluster;
-  onUpdate: (updatedCluster: ScreeningCluster) => void;
+  screening: ScreeningCluster;
+  onUpdate: (updatedScreening: ScreeningCluster) => void;
   onDelete: (id: string) => void;
 }) {
   const { toast } = useToast();
@@ -165,9 +165,9 @@ function ClusterCard({
     if (!newQuestionText.trim()) return;
     setIsAdding(true);
     try {
-      const newQuestion = await addScreeningQuestion(cluster.id, newQuestionText.trim());
-      const updatedQuestions = [...cluster.questions, newQuestion];
-      onUpdate({ ...cluster, questions: updatedQuestions });
+      const newQuestion = await addScreeningQuestion(screening.id, newQuestionText.trim());
+      const updatedQuestions = [...screening.questions, newQuestion];
+      onUpdate({ ...screening, questions: updatedQuestions });
       setNewQuestionText('');
       toast({ title: "Pertanyaan ditambahkan" });
     } catch (error) {
@@ -179,11 +179,11 @@ function ClusterCard({
 
   const handleUpdateQuestion = async (updatedQuestion: ScreeningQuestion) => {
     try {
-      await updateScreeningQuestion(cluster.id, updatedQuestion.id, updatedQuestion.text);
-      const updatedQuestions = cluster.questions.map((q) =>
+      await updateScreeningQuestion(screening.id, updatedQuestion.id, updatedQuestion.text);
+      const updatedQuestions = screening.questions.map((q) =>
         q.id === updatedQuestion.id ? updatedQuestion : q
       );
-      onUpdate({ ...cluster, questions: updatedQuestions });
+      onUpdate({ ...screening, questions: updatedQuestions });
        toast({ title: "Pertanyaan diperbarui" });
     } catch {
        toast({ title: "Gagal memperbarui pertanyaan", variant: 'destructive' });
@@ -192,9 +192,9 @@ function ClusterCard({
 
   const handleDeleteQuestion = async (questionId: string) => {
       try {
-        await deleteScreeningQuestion(cluster.id, questionId);
-        const updatedQuestions = cluster.questions.filter((q) => q.id !== questionId);
-        onUpdate({ ...cluster, questions: updatedQuestions });
+        await deleteScreeningQuestion(screening.id, questionId);
+        const updatedQuestions = screening.questions.filter((q) => q.id !== questionId);
+        onUpdate({ ...screening, questions: updatedQuestions });
         toast({ title: "Pertanyaan dihapus" });
       } catch {
         toast({ title: "Gagal menghapus pertanyaan", variant: 'destructive' });
@@ -206,19 +206,19 @@ function ClusterCard({
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle>{cluster.name}</CardTitle>
+                <CardTitle>{screening.name}</CardTitle>
                 <CardDescription>
-                Rentang Usia: {cluster.ageRange.min} - {cluster.ageRange.max} tahun
+                Rentang Usia: {screening.ageRange.min} - {screening.ageRange.max} tahun
                 </CardDescription>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(cluster.id)}>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(screening.id)}>
                 <Trash2 className="h-5 w-5 text-destructive" />
             </Button>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {cluster.questions.map((q) => (
+          {screening.questions.map((q) => (
             <QuestionItem 
                 key={q.id} 
                 question={q} 
@@ -247,7 +247,7 @@ function ClusterCard({
   );
 }
 
-function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void }) {
+function NewScreeningForm({ onAdd }: { onAdd: (screening: ScreeningCluster) => void }) {
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [minAge, setMinAge] = useState('');
@@ -262,17 +262,17 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
     }
     setIsSubmitting(true);
     try {
-      const newCluster = await addScreeningCluster({
+      const newScreening = await addScreeningCluster({
         name,
         ageRange: { min: parseInt(minAge), max: parseInt(maxAge) },
       });
-      onAdd(newCluster);
+      onAdd(newScreening);
       setName('');
       setMinAge('');
       setMaxAge('');
-      toast({ title: "Klaster baru dibuat" });
+      toast({ title: "Skrining baru dibuat" });
     } catch (error) {
-      toast({ title: "Gagal membuat klaster", variant: 'destructive' });
+      toast({ title: "Gagal membuat skrining", variant: 'destructive' });
     } finally {
         setIsSubmitting(false);
     }
@@ -281,17 +281,17 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Buat Klaster Baru</CardTitle>
+        <CardTitle>Buat Skrining Baru</CardTitle>
         <CardDescription>
-          Buat grup pertanyaan baru berdasarkan nama atau rentang usia pasien.
+          Buat grup pertanyaan baru berdasarkan nama skrining atau rentang usia pasien.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="clusterName">Nama Klaster</Label>
+            <Label htmlFor="screeningName">Nama Skrining</Label>
             <Input
-              id="clusterName"
+              id="screeningName"
               placeholder="Contoh: Skrining Diabetes"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -322,13 +322,13 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
           <Alert>
               <AlertTitle>Info</AlertTitle>
               <AlertDescription>
-                Isi rentang usia 0-150 jika klaster berlaku untuk semua usia.
+                Isi rentang usia 0-150 jika skrining berlaku untuk semua usia.
               </AlertDescription>
           </Alert>
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Buat Klaster
+              Buat Skrining
             </Button>
           </div>
         </form>
@@ -338,43 +338,43 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
 }
 
 export default function ScreeningSettingsPage() {
-  const [clusters, setClusters] = useState<ScreeningCluster[]>([]);
-  const [clusterToDelete, setClusterToDelete] = useState<ScreeningCluster | null>(null);
+  const [screenings, setScreenings] = useState<ScreeningCluster[]>([]);
+  const [screeningToDelete, setScreeningToDelete] = useState<ScreeningCluster | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     async function loadData() {
       const data = await getScreeningClusters();
-      setClusters(data);
+      setScreenings(data);
     }
     loadData();
   }, []);
 
-  const handleAddCluster = (newCluster: ScreeningCluster) => {
-    setClusters((prev) => [...prev, newCluster].sort((a,b) => a.name.localeCompare(b.name)));
+  const handleAddScreening = (newScreening: ScreeningCluster) => {
+    setScreenings((prev) => [...prev, newScreening].sort((a,b) => a.name.localeCompare(b.name)));
   };
 
-  const handleUpdateCluster = (updatedCluster: ScreeningCluster) => {
-    setClusters((prev) =>
-      prev.map((c) => (c.id === updatedCluster.id ? updatedCluster : c))
+  const handleUpdateScreening = (updatedScreening: ScreeningCluster) => {
+    setScreenings((prev) =>
+      prev.map((s) => (s.id === updatedScreening.id ? updatedScreening : s))
     );
   };
   
-  const handleDeleteRequest = (cluster: ScreeningCluster) => {
-    setClusterToDelete(cluster);
+  const handleDeleteRequest = (screening: ScreeningCluster) => {
+    setScreeningToDelete(screening);
   }
 
   const handleConfirmDelete = async () => {
-    if (!clusterToDelete) return;
+    if (!screeningToDelete) return;
     
     try {
-        await deleteScreeningCluster(clusterToDelete.id);
-        setClusters(prev => prev.filter(c => c.id !== clusterToDelete.id));
-        toast({ title: `Klaster "${clusterToDelete.name}" dihapus.` });
+        await deleteScreeningCluster(screeningToDelete.id);
+        setScreenings(prev => prev.filter(s => s.id !== screeningToDelete.id));
+        toast({ title: `Skrining "${screeningToDelete.name}" dihapus.` });
     } catch {
-        toast({ title: "Gagal menghapus klaster.", variant: 'destructive' });
+        toast({ title: "Gagal menghapus skrining.", variant: 'destructive' });
     } finally {
-        setClusterToDelete(null);
+        setScreeningToDelete(null);
     }
   }
 
@@ -382,41 +382,41 @@ export default function ScreeningSettingsPage() {
     <div className="animate-in fade-in-50">
       <PageHeader
         title="Pengaturan Skrining Kesehatan"
-        subtitle="Kelola daftar pertanyaan skrining berdasarkan klaster usia atau kategori penyakit."
+        subtitle="Kelola daftar pertanyaan skrining berdasarkan kategori atau rentang usia."
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <NewClusterForm onAdd={handleAddCluster} />
+          <NewScreeningForm onAdd={handleAddScreening} />
         </div>
         <div className="lg:col-span-2 space-y-6">
-          {clusters.length > 0 ? (
-            clusters.map((cluster) => (
-              <ClusterCard
-                key={cluster.id}
-                cluster={cluster}
-                onUpdate={handleUpdateCluster}
-                onDelete={() => handleDeleteRequest(cluster)}
+          {screenings.length > 0 ? (
+            screenings.map((screening) => (
+              <ScreeningItemCard
+                key={screening.id}
+                screening={screening}
+                onUpdate={handleUpdateScreening}
+                onDelete={() => handleDeleteRequest(screening)}
               />
             ))
           ) : (
              <Card className="text-center p-8">
-                <CardTitle>Belum Ada Klaster</CardTitle>
-                <CardDescription>Buat klaster baru untuk mulai menambahkan pertanyaan skrining.</CardDescription>
+                <CardTitle>Belum Ada Skrining</CardTitle>
+                <CardDescription>Buat skrining baru untuk mulai menambahkan pertanyaan.</CardDescription>
             </Card>
           )}
         </div>
       </div>
 
-       <AlertDialog open={!!clusterToDelete} onOpenChange={(open) => !open && setClusterToDelete(null)}>
+       <AlertDialog open={!!screeningToDelete} onOpenChange={(open) => !open && setScreeningToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Anda yakin ingin menghapus klaster ini?</AlertDialogTitle>
+            <AlertDialogTitle>Anda yakin ingin menghapus skrining ini?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini akan menghapus klaster <strong className='text-foreground'>{clusterToDelete?.name}</strong> beserta semua pertanyaannya. Tindakan ini tidak dapat dibatalkan.
+              Tindakan ini akan menghapus skrining <strong className='text-foreground'>{screeningToDelete?.name}</strong> beserta semua pertanyaannya. Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setClusterToDelete(null)}>Batal</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setScreeningToDelete(null)}>Batal</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

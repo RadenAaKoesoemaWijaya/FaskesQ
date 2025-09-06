@@ -116,7 +116,7 @@ export async function getScreeningClusters(): Promise<ScreeningCluster[]> {
     return dummyScreeningClusters.map(cluster => ({
         ...cluster,
         questions: dummyScreeningQuestions.filter(q => q.cluster_id === cluster.id)
-    }));
+    })).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function addScreeningCluster(data: Omit<ScreeningCluster, 'id' | 'questions' | 'created_at'>): Promise<ScreeningCluster> {

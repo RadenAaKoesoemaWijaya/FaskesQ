@@ -27,6 +27,39 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Initiate conversation with the AI assistant on component mount
+  useEffect(() => {
+    const initiateConversation = async () => {
+      setIsLoading(true);
+      try {
+        const result = await runTeleconsultChatbot({
+          patientId: patient.id,
+          patientName: patient.name,
+          patientDob: patient.dateOfBirth,
+          history: [], // Start with empty history
+        });
+
+        if (result.success && result.data) {
+          const initialMessage: Message = { role: 'model', content: result.data.response };
+          setMessages([initialMessage]);
+        } else {
+          throw new Error(result.error || 'Gagal memulai percakapan dengan AI.');
+        }
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initiateConversation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patient.id]);
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -42,7 +75,8 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
     if (!input || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     setInput('');
     setIsLoading(true);
 
@@ -51,7 +85,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
         patientId: patient.id,
         patientName: patient.name,
         patientDob: patient.dateOfBirth,
-        history: messages,
+        history: currentMessages.map(m => ({role: m.role, content: m.content})),
       });
 
       if (result.success && result.data) {
@@ -66,7 +100,8 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
         title: 'Error',
         description: error.message,
       });
-      setMessages((prev) => prev.slice(0, prev.length - 1));
+       // Revert the user message on error
+      setMessages(messages);
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +119,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
         </Avatar>
         <div className="ml-4">
           <h3 className="font-semibold">Konsultasi dengan {patient.name}</h3>
-          <p className="text-sm text-muted-foreground">Didukung oleh AI</p>
+          <p className="text-sm text-muted-foreground">Dibantu oleh Asisten AI</p>
         </div>
       </div>
       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
@@ -98,7 +133,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
               )}
             >
               {message.role === 'model' && (
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
                   <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
                 </Avatar>
               )}
@@ -110,7 +145,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
                     : 'bg-muted'
                 )}
               >
-                <p className="text-sm">{message.content}</p>
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </div>
                {message.role === 'user' && (
                 <Avatar className="h-8 w-8">
@@ -121,7 +156,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
           ))}
           {isLoading && (
             <div className="flex items-start gap-3 justify-start">
-                 <Avatar className="h-8 w-8">
+                 <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
                   <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
                 </Avatar>
                 <div className="px-4 py-2 rounded-lg bg-muted flex items-center">
