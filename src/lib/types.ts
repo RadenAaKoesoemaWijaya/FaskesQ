@@ -1,4 +1,5 @@
 
+
 export type PatientRegistrationData = {
   name: string;
   dateOfBirth: string;
@@ -13,7 +14,9 @@ export type PatientRegistrationData = {
 
 export type ScreeningQuestion = {
   id: string;
+  cluster_id: string;
   text: string;
+  created_at: string;
 };
 
 export type ScreeningAnswer = {
@@ -24,9 +27,11 @@ export type ScreeningAnswer = {
 
 export type ScreeningResult = {
   id: string;
+  patient_id: string;
   date: string;
   clusterName: string;
   answers: ScreeningAnswer[];
+  created_at: string;
 }
 
 export type Patient = PatientRegistrationData & {

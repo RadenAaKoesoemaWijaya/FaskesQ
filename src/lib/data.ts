@@ -1,245 +1,185 @@
 
-
-import { sql } from './db';
 import type { Patient, PatientRegistrationData, Testimonial, TestimonialSubmissionData, ScreeningCluster, ScreeningQuestion, ScreeningResult } from './types';
+import { patients, testimonials, screeningClusters, screeningQuestions, examinations, screeningResults } from './placeholder-data';
 
-// Helper to handle potential JSON parsing errors
-function parseJson(jsonString: any, defaultValue: any) {
-  if (typeof jsonString === 'object' && jsonString !== null) return jsonString;
-  if (typeof jsonString !== 'string') return defaultValue;
-  try {
-    return JSON.parse(jsonString);
-  } catch (e) {
-    return defaultValue;
-  }
-}
+// --- DATA DUMMY SECTION ---
+// All data operations will be performed on these in-memory arrays.
 
-// Patient Functions
+let dummyPatients: Patient[] = [...patients];
+let dummyTestimonials: Testimonial[] = [...testimonials];
+let dummyScreeningClusters: ScreeningCluster[] = [...screeningClusters];
+let dummyScreeningQuestions: ScreeningQuestion[] = [...screeningQuestions];
+let dummyExaminations = [...examinations];
+let dummyScreeningResults = [...screeningResults];
+
+
+// Helper to simulate database delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// --- PATIENT FUNCTIONS ---
+
 export async function getPatients(query?: string): Promise<Patient[]> {
-  try {
-    let patientsResult;
+    await delay(300); // Simulate network latency
+    let filteredPatients = dummyPatients;
+
     if (query) {
-      patientsResult = await sql`
-        SELECT * FROM patients
-        WHERE name ILIKE ${'%' + query + '%'} OR "medicalRecordNumber" ILIKE ${'%' + query + '%'}
-        ORDER BY "created_at" DESC
-      `;
-    } else {
-      patientsResult = await sql`SELECT * FROM patients ORDER BY "created_at" DESC`;
+        const lowercasedQuery = query.toLowerCase();
+        filteredPatients = dummyPatients.filter(p =>
+            p.name.toLowerCase().includes(lowercasedQuery) ||
+            p.medicalRecordNumber.toLowerCase().includes(lowercasedQuery)
+        );
     }
-
-    const patientIds = patientsResult.rows.map(p => p.id);
-    if (patientIds.length === 0) return [];
     
-    const examinationsResult = await sql`SELECT * FROM examinations WHERE patient_id = ANY(${patientIds}::uuid[])`;
-    const screeningsResult = await sql`SELECT * FROM screening_results WHERE patient_id = ANY(${patientIds}::uuid[])`;
-
-    return patientsResult.rows.map(p => ({
-      ...p,
-      history: examinationsResult.rows.filter(e => e.patient_id === p.id),
-      screeningHistory: screeningsResult.rows.filter(s => s.patient_id === p.id),
-      dateOfBirth: new Date(p.dateOfBirth).toISOString().split('T')[0], // Format date
-    })) as Patient[];
-  } catch (error) {
-    console.error('Error fetching patients:', error);
-    throw new Error('Gagal mengambil data pasien.');
-  }
+    // Attach history and screening to each patient
+    return filteredPatients.map(p => ({
+        ...p,
+        history: dummyExaminations.filter(e => e.patient_id === p.id),
+        screeningHistory: dummyScreeningResults.filter(s => s.patient_id === p.id)
+    })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 export async function getPatientById(id: string): Promise<Patient | undefined> {
-    try {
-        const patientResult = await sql`SELECT * FROM patients WHERE id = ${id}`;
-        if (patientResult.rowCount === 0) return undefined;
+    await delay(200);
+    const patient = dummyPatients.find(p => p.id === id);
+    if (!patient) return undefined;
 
-        const examinationsResult = await sql`SELECT * FROM examinations WHERE patient_id = ${id}`;
-        const screeningsResult = await sql`SELECT * FROM screening_results WHERE patient_id = ${id}`;
-
-        const patientData = patientResult.rows[0];
-
-        return {
-            ...patientData,
-            history: examinationsResult.rows,
-            screeningHistory: screeningsResult.rows,
-            dateOfBirth: new Date(patientData.dateOfBirth).toISOString().split('T')[0],
-        } as Patient;
-
-    } catch (error) {
-        console.error(`Error fetching patient ${id}:`, error);
-        throw new Error('Gagal mengambil data detail pasien.');
-    }
+    return {
+        ...patient,
+        history: dummyExaminations.filter(e => e.patient_id === id),
+        screeningHistory: dummyScreeningResults.filter(s => s.patient_id === id)
+    };
 }
 
-
 export async function addPatient(data: PatientRegistrationData): Promise<string> {
-    try {
-        const result = await sql`
-            INSERT INTO patients (name, nik, "medicalRecordNumber", "dateOfBirth", gender, contact, address, "paymentMethod", "insuranceNumber", "avatarUrl")
-            VALUES (${data.name}, ${data.nik}, ${data.medicalRecordNumber}, ${data.dateOfBirth}, ${data.gender}, ${data.contact}, ${data.address}, ${data.paymentMethod}, ${data.insuranceNumber || null}, 'https://placehold.co/100x100.png')
-            RETURNING id
-        `;
-        return result.rows[0].id;
-    } catch (error) {
-        console.error('Error adding patient:', error);
-        throw new Error('Gagal menambahkan pasien baru.');
-    }
+    await delay(500);
+    const newId = `patient-${Date.now()}`;
+    const newPatient: Patient = {
+        id: newId,
+        ...data,
+        avatarUrl: `https://i.pravatar.cc/150?u=${newId}`,
+        history: [],
+        screeningHistory: [],
+        created_at: new Date().toISOString(),
+    };
+    dummyPatients.unshift(newPatient); // Add to the beginning of the array
+    return newId;
 }
 
 export async function updatePatient(id: string, data: Partial<PatientRegistrationData>): Promise<Patient> {
-    try {
-        const result = await sql`
-            UPDATE patients
-            SET name = ${data.name}, nik = ${data.nik}, "medicalRecordNumber" = ${data.medicalRecordNumber}, "dateOfBirth" = ${data.dateOfBirth}, gender = ${data.gender}, contact = ${data.contact}, address = ${data.address}, "paymentMethod" = ${data.paymentMethod}, "insuranceNumber" = ${data.insuranceNumber || null}
-            WHERE id = ${id}
-            RETURNING *
-        `;
-        return result.rows[0] as Patient;
-    } catch (error) {
-        console.error('Error updating patient:', error);
-        throw new Error('Gagal memperbarui data pasien.');
+    await delay(500);
+    let patientToUpdate = dummyPatients.find(p => p.id === id);
+    if (!patientToUpdate) {
+        throw new Error("Patient not found");
     }
+    patientToUpdate = { ...patientToUpdate, ...data };
+    dummyPatients = dummyPatients.map(p => p.id === id ? patientToUpdate! : p);
+    return patientToUpdate;
 }
+
 
 export async function deletePatient(id: string): Promise<void> {
-    try {
-        await sql`DELETE FROM patients WHERE id = ${id}`;
-    } catch (error) {
-        console.error('Error deleting patient:', error);
-        throw new Error('Gagal menghapus pasien.');
+    await delay(500);
+    const patientExists = dummyPatients.some(p => p.id === id);
+    if (!patientExists) {
+        // To prevent crashes if trying to delete already deleted patient
+        console.warn(`Patient with id ${id} not found for deletion.`);
+        return;
     }
+    dummyPatients = dummyPatients.filter(p => p.id !== id);
 }
 
-// Testimonial Functions
+
+// --- TESTIMONIAL FUNCTIONS ---
+
 export async function getTestimonials(): Promise<Testimonial[]> {
-    try {
-        const result = await sql`SELECT * FROM testimonials ORDER BY "created_at" DESC`;
-        return result.rows as Testimonial[];
-    } catch (error) {
-        console.error('Error fetching testimonials:', error);
-        throw new Error('Gagal mengambil data testimoni.');
-    }
+    await delay(300);
+    return dummyTestimonials.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 export async function addTestimonial(data: TestimonialSubmissionData): Promise<Testimonial> {
-    try {
-        const result = await sql`
-            INSERT INTO testimonials ("patientName", feedback, rating, date)
-            VALUES (${data.patientName}, ${data.feedback}, ${data.rating}, ${new Date().toISOString()})
-            RETURNING *
-        `;
-        return result.rows[0] as Testimonial;
-    } catch (error) {
-        console.error('Error adding testimonial:', error);
-        throw new Error('Gagal menambahkan testimoni.');
-    }
+    await delay(400);
+    const newTestimonial: Testimonial = {
+        id: `testimonial-${Date.now()}`,
+        ...data,
+        date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+    };
+    dummyTestimonials.unshift(newTestimonial);
+    return newTestimonial;
 }
 
 
-// Screening Functions
-export async function getScreeningClusters(): Promise<ScreeningCluster[]> {
-    try {
-      const clustersResult = await sql`SELECT * FROM screening_clusters`;
-      const questionsResult = await sql`SELECT * FROM screening_questions`;
-      
-      return clustersResult.rows.map(c => ({
-        ...c,
-        ageRange: parseJson(c.ageRange, { min: 0, max: 0 }),
-        questions: questionsResult.rows.filter(q => q.cluster_id === c.id)
-      })) as ScreeningCluster[];
+// --- SCREENING FUNCTIONS ---
 
-    } catch (error) {
-      console.error('Error fetching screening clusters:', error);
-      throw new Error('Gagal mengambil klaster skrining.');
-    }
+export async function getScreeningClusters(): Promise<ScreeningCluster[]> {
+    await delay(100);
+    return dummyScreeningClusters.map(cluster => ({
+        ...cluster,
+        questions: dummyScreeningQuestions.filter(q => q.cluster_id === cluster.id)
+    }));
 }
 
 export async function addScreeningCluster(data: Omit<ScreeningCluster, 'id' | 'questions' | 'created_at'>): Promise<ScreeningCluster> {
-    try {
-        const result = await sql`
-            INSERT INTO screening_clusters (name, "ageRange")
-            VALUES (${data.name}, ${JSON.stringify(data.ageRange)})
-            RETURNING *
-        `;
-        return { ...result.rows[0], questions: [] } as ScreeningCluster;
-    } catch (error) {
-        console.error('Error adding screening cluster:', error);
-        throw new Error('Gagal menambah klaster skrining.');
-    }
+    await delay(200);
+    const newCluster: ScreeningCluster = {
+        id: `cluster-${Date.now()}`,
+        ...data,
+        questions: [],
+        created_at: new Date().toISOString(),
+    };
+    dummyScreeningClusters.push(newCluster);
+    return newCluster;
 }
 
 export async function updateScreeningCluster(cluster: ScreeningCluster): Promise<ScreeningCluster> {
-    try {
-        const result = await sql`
-            UPDATE screening_clusters
-            SET name = ${cluster.name}, "ageRange" = ${JSON.stringify(cluster.ageRange)}
-            WHERE id = ${cluster.id}
-            RETURNING *
-        `;
-        return result.rows[0] as ScreeningCluster;
-    } catch(e) {
-        console.error('Error updating screening cluster:', e);
-        throw new Error('Gagal memperbarui klaster skrining.');
-    }
+    await delay(200);
+     dummyScreeningClusters = dummyScreeningClusters.map(c => c.id === cluster.id ? cluster : c);
+     return cluster;
 }
-
 
 export async function deleteScreeningCluster(id: string): Promise<void> {
-    try {
-        // Must delete questions first due to foreign key constraint
-        await sql`DELETE FROM screening_questions WHERE cluster_id = ${id}`;
-        await sql`DELETE FROM screening_clusters WHERE id = ${id}`;
-    } catch (error) {
-        console.error('Error deleting screening cluster:', error);
-        throw new Error('Gagal menghapus klaster skrining.');
-    }
+    await delay(300);
+    // Delete associated questions first
+    dummyScreeningQuestions = dummyScreeningQuestions.filter(q => q.cluster_id !== id);
+    dummyScreeningClusters = dummyScreeningClusters.filter(c => c.id !== id);
 }
 
-
 export async function addScreeningQuestion(clusterId: string, questionText: string): Promise<ScreeningQuestion> {
-    try {
-        const result = await sql`
-            INSERT INTO screening_questions (cluster_id, text)
-            VALUES (${clusterId}, ${questionText})
-            RETURNING *
-        `;
-        return result.rows[0] as ScreeningQuestion;
-    } catch (error) {
-        console.error('Error adding screening question:', error);
-        throw new Error('Gagal menambahkan pertanyaan skrining.');
-    }
+    await delay(150);
+    const newQuestion: ScreeningQuestion = {
+        id: `question-${Date.now()}`,
+        cluster_id: clusterId,
+        text: questionText,
+        created_at: new Date().toISOString(),
+    };
+    dummyScreeningQuestions.push(newQuestion);
+    return newQuestion;
 }
 
 export async function updateScreeningQuestion(clusterId: string, questionId: string, questionText: string): Promise<ScreeningQuestion> {
-     try {
-        const result = await sql`
-            UPDATE screening_questions
-            SET text = ${questionText}
-            WHERE id = ${questionId} AND cluster_id = ${clusterId}
-            RETURNING *
-        `;
-        return result.rows[0] as ScreeningQuestion;
-    } catch (error) {
-        console.error('Error updating screening question:', error);
-        throw new Error('Gagal memperbarui pertanyaan skrining.');
+    await delay(150);
+    let questionToUpdate = dummyScreeningQuestions.find(q => q.id === questionId && q.cluster_id === clusterId);
+    if (!questionToUpdate) {
+        throw new Error("Question not found");
     }
+    questionToUpdate.text = questionText;
+    dummyScreeningQuestions = dummyScreeningQuestions.map(q => q.id === questionId ? questionToUpdate! : q);
+    return questionToUpdate;
 }
 
 export async function deleteScreeningQuestion(clusterId: string, questionId: string): Promise<void> {
-      try {
-        await sql`DELETE FROM screening_questions WHERE id = ${questionId} AND cluster_id = ${clusterId}`;
-    } catch (error) {
-        console.error('Error deleting screening question:', error);
-        throw new Error('Gagal menghapus pertanyaan skrining.');
-    }
+    await delay(150);
+    dummyScreeningQuestions = dummyScreeningQuestions.filter(q => q.id !== questionId);
 }
 
 export async function saveScreeningResult(patientId: string, result: Omit<ScreeningResult, 'id' | 'date' | 'created_at'>): Promise<void> {
-    try {
-        await sql`
-            INSERT INTO screening_results (patient_id, "clusterName", answers, date)
-            VALUES (${patientId}, ${result.clusterName}, ${JSON.stringify(result.answers)}, ${new Date().toISOString()})
-        `;
-    } catch (error) {
-        console.error('Error saving screening result:', error);
-        throw new Error('Gagal menyimpan hasil skrining.');
-    }
+    await delay(300);
+    const newResult: ScreeningResult = {
+        id: `screening-${Date.now()}`,
+        ...result,
+        patient_id: patientId,
+        date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+    };
+    dummyScreeningResults.push(newResult);
 }
