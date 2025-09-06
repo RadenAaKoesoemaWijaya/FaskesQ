@@ -80,12 +80,6 @@ export async function runSuggestIcd10(
   data?: SuggestIcd10Output;
   error?: string;
 }> {
-    if (!process.env.GEMINI_API_KEY) {
-    return {
-      success: false,
-      error: 'Kunci API Gemini tidak dikonfigurasi. Mohon atur di file .env Anda.',
-    };
-  }
   try {
     const result = await suggestIcd10(input);
     return { success: true, data: result };
