@@ -1,4 +1,3 @@
-
 // src/lib/placeholder-data.ts
 
 import type { Patient, Testimonial, ScreeningCluster, ScreeningQuestion, Examination, ScreeningResult } from './types';
@@ -176,35 +175,102 @@ export const screeningQuestions: ScreeningQuestion[] = [
     // Lansia
     { id: 'q-l-1', cluster_id: 'cluster-4', text: 'Apakah pernah jatuh dalam 6 bulan terakhir?', created_at: '2023-01-01T00:00:00Z' },
     { id: 'q-l-2', cluster_id: 'cluster-4', text: 'Apakah Anda mengalami kesulitan mengingat sesuatu?', created_at: '2023-01-01T00:00:00Z' },
+
+    // Tuberkulosis
+    { id: 'q-tb-1', cluster_id: 'cluster-tb', text: 'Apakah Anda mengalami batuk berdahak selama 2 minggu atau lebih?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-tb-2', cluster_id: 'cluster-tb', text: 'Apakah batuk disertai dahak bercampur darah?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-tb-3', cluster_id: 'cluster-tb', text: 'Apakah Anda mengalami demam, keringat malam, dan penurunan berat badan tanpa sebab yang jelas?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-tb-4', cluster_id: 'cluster-tb', text: 'Apakah ada anggota keluarga atau kontak erat yang menderita TBC?', created_at: '2024-01-01T00:00:00Z' },
+
+    // Anemia & Thalassemia
+    { id: 'q-at-1', cluster_id: 'cluster-anemia', text: 'Apakah Anda sering merasa cepat lelah, lemah, atau pusing?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-at-2', cluster_id: 'cluster-anemia', text: 'Apakah Anda terlihat pucat (terutama pada kelopak mata, bibir, dan telapak tangan)?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-at-3', cluster_id: 'cluster-anemia', text: 'Apakah ada riwayat keluarga dengan Thalassemia atau kelainan darah lainnya?', created_at: '2024-01-01T00:00:00Z' },
+
+    // Kesehatan Jiwa (SRQ-20)
+    { id: 'q-kj-1', cluster_id: 'cluster-jiwa', text: 'Apakah Anda sering menderita sakit kepala?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-2', cluster_id: 'cluster-jiwa', text: 'Apakah Anda kehilangan nafsu makan?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-3', cluster_id: 'cluster-jiwa', text: 'Apakah tidur Anda tidak nyenyak?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-4', cluster_id: 'cluster-jiwa', text: 'Apakah Anda mudah merasa takut?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-5', cluster_id: 'cluster-jiwa', text: 'Apakah Anda merasa tegang, cemas, atau khawatir?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-6', cluster_id: 'cluster-jiwa', text: 'Apakah tangan Anda gemetar?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-7', cluster_id: 'cluster-jiwa', text: 'Apakah pencernaan Anda terganggu?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-8', cluster_id: 'cluster-jiwa', text: 'Apakah Anda sulit berpikir jernih?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-9', cluster_id: 'cluster-jiwa', text: 'Apakah Anda merasa tidak bahagia?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-kj-10', cluster_id: 'cluster-jiwa', text: 'Apakah Anda lebih sering menangis?', created_at: '2024-01-01T00:00:00Z' },
+
+    // Diabetes Melitus
+    { id: 'q-dm-1', cluster_id: 'cluster-dm', text: 'Apakah Anda sering merasa haus dan sering buang air kecil, terutama pada malam hari?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-dm-2', cluster_id: 'cluster-dm', text: 'Apakah Anda sering merasa lapar meskipun sudah makan?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-dm-3', cluster_id: 'cluster-dm', text: 'Apakah Anda mengalami penurunan berat badan tanpa sebab yang jelas?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-dm-4', cluster_id: 'cluster-dm', text: 'Apakah Anda memiliki riwayat keluarga dengan Diabetes Melitus?', created_at: '2024-01-01T00:00:00Z' },
+
+    // Hipertensi
+    { id: 'q-ht-1', cluster_id: 'cluster-hipertensi', text: 'Apakah Anda sering mengalami sakit kepala atau pusing di bagian belakang kepala?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-ht-2', cluster_id: 'cluster-hipertensi', text: 'Apakah Anda memiliki riwayat tekanan darah tinggi?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-ht-3', cluster_id: 'cluster-hipertensi', text: 'Apakah Anda mengonsumsi makanan tinggi garam secara berlebihan?', created_at: '2024-01-01T00:00:00Z' },
+
+    // Geriatri
+    { id: 'q-g-1', cluster_id: 'cluster-geriatri', text: 'Apakah Anda membutuhkan bantuan orang lain untuk aktivitas seperti makan, mandi, atau berpakaian (Activity of Daily Living)?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-g-2', cluster_id: 'cluster-geriatri', text: 'Dalam 2 minggu terakhir, apakah Anda merasa sedih, murung, atau putus asa (Skrining Depresi - GDS)?', created_at: '2024-01-01T00:00:00Z' },
+    { id: 'q-g-3', cluster_id: 'cluster-geriatri', text: 'Dalam 2 minggu terakhir, apakah Anda kehilangan minat atau kegembiraan dalam melakukan sesuatu?', created_at: '2024-01-01T00:00:00Z' },
 ];
 
 export const screeningClusters: ScreeningCluster[] = [
   {
     id: 'cluster-1',
-    name: 'Skrining Bayi & Anak (0-11 tahun)',
-    ageRange: { min: 0, max: 11 },
-    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-1'),
-    created_at: '2023-01-01T00:00:00Z',
-  },
-  {
-    id: 'cluster-2',
-    name: 'Skrining Remaja (12-18 tahun)',
-    ageRange: { min: 12, max: 18 },
-    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-2'),
+    name: 'Skrining Pertumbuhan (0-18 tahun)',
+    ageRange: { min: 0, max: 18 },
+    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-1' || q.cluster_id === 'cluster-2'),
     created_at: '2023-01-01T00:00:00Z',
   },
   {
     id: 'cluster-3',
-    name: 'Skrining Dewasa (19-64 tahun)',
+    name: 'Skrining Gaya Hidup (19-64 tahun)',
     ageRange: { min: 19, max: 64 },
     questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-3'),
     created_at: '2023-01-01T00:00:00Z',
   },
   {
-    id: 'cluster-4',
-    name: 'Skrining Lansia (>= 65 tahun)',
-    ageRange: { min: 65, max: 150 },
-    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-4'),
-    created_at: '2023-01-01T00:00:00Z',
+    id: 'cluster-tb',
+    name: 'Skrining Tuberkulosis (TBC)',
+    ageRange: { min: 0, max: 150 },
+    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-tb'),
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cluster-anemia',
+    name: 'Skrining Anemia & Thalassemia',
+    ageRange: { min: 0, max: 150 },
+    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-anemia'),
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cluster-jiwa',
+    name: 'Skrining Kesehatan Jiwa (SRQ-20)',
+    ageRange: { min: 15, max: 150 },
+    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-jiwa'),
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cluster-dm',
+    name: 'Skrining Diabetes Melitus',
+    ageRange: { min: 18, max: 150 },
+    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-dm'),
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cluster-hipertensi',
+    name: 'Skrining Hipertensi',
+    ageRange: { min: 18, max: 150 },
+    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-hipertensi'),
+    created_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cluster-geriatri',
+    name: 'Skrining Geriatri (>60 tahun)',
+    ageRange: { min: 60, max: 150 },
+    questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-geriatri' || q.cluster_id === 'cluster-4'),
+    created_at: '2024-01-01T00:00:00Z',
   },
 ];

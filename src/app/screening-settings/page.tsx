@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from '@/components/page-header';
 import {
   Card,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Edit, Save, X, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Save, X, Loader2, Mic, MicOff } from 'lucide-react';
 import {
   getScreeningClusters,
   addScreeningCluster,
@@ -34,6 +34,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 function QuestionItem({
   question,
@@ -94,6 +96,70 @@ function ClusterCard({
   const { toast } = useToast();
   const [newQuestionText, setNewQuestionText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    // @ts-ignore
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      const recognition = recognitionRef.current;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'id-ID';
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            interimTranscript += event.results[i][0].transcript;
+        }
+        setNewQuestionText(interimTranscript);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      }
+
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        toast({
+            variant: "destructive",
+            title: "Error Pengenalan Suara",
+            description: `Terjadi kesalahan: ${event.error}. Pastikan Anda telah memberikan izin mikrofon.`,
+        });
+        setIsRecording(false);
+      };
+
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [toast]);
+  
+
+  const handleToggleRecording = () => {
+    if (!recognitionRef.current) {
+         toast({
+            variant: "destructive",
+            title: "Browser Tidak Mendukung",
+            description: "Maaf, browser Anda tidak mendukung fitur pengenalan suara.",
+        });
+        return;
+    }
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    } else {
+      setNewQuestionText('');
+      recognitionRef.current?.start();
+      setIsRecording(true);
+    }
+  };
+
 
   const handleAddQuestion = async () => {
     if (!newQuestionText.trim()) return;
@@ -163,11 +229,15 @@ function ClusterCard({
         </div>
         <div className="flex gap-2 mt-4 pt-4 border-t">
           <Input
-            placeholder="Ketik pertanyaan baru..."
+            placeholder={isRecording ? 'Mendengarkan...' : 'Ketik atau rekam pertanyaan baru...'}
             value={newQuestionText}
             onChange={(e) => setNewQuestionText(e.target.value)}
+            disabled={isRecording}
           />
-          <Button onClick={handleAddQuestion} disabled={isAdding}>
+           <Button onClick={handleToggleRecording} size="icon" variant={isRecording ? 'destructive' : 'outline'}>
+            {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+          <Button onClick={handleAddQuestion} disabled={isAdding || isRecording}>
             {isAdding ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
             <span className="hidden sm:inline ml-2">Tambah</span>
           </Button>
@@ -211,9 +281,9 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Buat Klaster Usia Baru</CardTitle>
+        <CardTitle>Buat Klaster Baru</CardTitle>
         <CardDescription>
-          Buat grup pertanyaan baru berdasarkan rentang usia pasien.
+          Buat grup pertanyaan baru berdasarkan nama atau rentang usia pasien.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -222,7 +292,7 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
             <Label htmlFor="clusterName">Nama Klaster</Label>
             <Input
               id="clusterName"
-              placeholder="Contoh: Lansia, Dewasa Muda"
+              placeholder="Contoh: Skrining Diabetes"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -233,7 +303,7 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
               <Input
                 id="minAge"
                 type="number"
-                placeholder="cth: 60"
+                placeholder="cth: 0"
                 value={minAge}
                 onChange={(e) => setMinAge(e.target.value)}
               />
@@ -249,6 +319,12 @@ function NewClusterForm({ onAdd }: { onAdd: (cluster: ScreeningCluster) => void 
               />
             </div>
           </div>
+          <Alert>
+              <AlertTitle>Info</AlertTitle>
+              <AlertDescription>
+                Isi rentang usia 0-150 jika klaster berlaku untuk semua usia.
+              </AlertDescription>
+          </Alert>
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting}>
                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -275,7 +351,7 @@ export default function ScreeningSettingsPage() {
   }, []);
 
   const handleAddCluster = (newCluster: ScreeningCluster) => {
-    setClusters((prev) => [...prev, newCluster]);
+    setClusters((prev) => [...prev, newCluster].sort((a,b) => a.name.localeCompare(b.name)));
   };
 
   const handleUpdateCluster = (updatedCluster: ScreeningCluster) => {
@@ -305,8 +381,8 @@ export default function ScreeningSettingsPage() {
   return (
     <div className="animate-in fade-in-50">
       <PageHeader
-        title="Skrining Kesehatan"
-        subtitle="Kelola daftar pertanyaan skrining berdasarkan klaster usia."
+        title="Pengaturan Skrining Kesehatan"
+        subtitle="Kelola daftar pertanyaan skrining berdasarkan klaster usia atau kategori penyakit."
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
@@ -325,7 +401,7 @@ export default function ScreeningSettingsPage() {
           ) : (
              <Card className="text-center p-8">
                 <CardTitle>Belum Ada Klaster</CardTitle>
-                <CardDescription>Buat klaster usia baru untuk mulai menambahkan pertanyaan skrining.</CardDescription>
+                <CardDescription>Buat klaster baru untuk mulai menambahkan pertanyaan skrining.</CardDescription>
             </Card>
           )}
         </div>
