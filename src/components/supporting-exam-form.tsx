@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext, Controller } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   FormControl,
@@ -11,13 +11,15 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Upload, Printer } from 'lucide-react';
+import { Save, Upload, Printer, Loader2, FileCheck, X } from 'lucide-react';
 import { Label } from './ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Checkbox } from './ui/checkbox';
 import type { Patient } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
+import { useState, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const labRequests = [
     { id: 'requests.lab.completeBloodCount', label: 'Darah Lengkap' },
@@ -64,10 +66,8 @@ function RequestPrintLayout({ patient, requests }: { patient: Patient, requests:
                     <h2 className="text-xl font-bold">Formulir Permintaan Pemeriksaan Penunjang</h2>
                     <p className="text-sm">Tanggal: {today}</p>
                 </div>
-            </header>
-
+            </header
             <Separator className="my-6" />
-
             <section className="mb-6">
                 <h3 className="font-bold text-lg mb-2">Data Pasien</h3>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
@@ -77,9 +77,7 @@ function RequestPrintLayout({ patient, requests }: { patient: Patient, requests:
                     <div><strong>Jenis Kelamin:</strong> {patient.gender}</div>
                 </div>
             </section>
-
              <Separator className="my-6" />
-
             <section>
                  <h3 className="font-bold text-lg mb-2">Pemeriksaan yang Diminta</h3>
                  <div className="space-y-4">
@@ -115,7 +113,6 @@ function RequestPrintLayout({ patient, requests }: { patient: Patient, requests:
                      </div>
                  )}
             </section>
-
              <footer className="mt-16 text-sm">
                 <div className="grid grid-cols-2 gap-8">
                     <div></div>
@@ -132,11 +129,37 @@ function RequestPrintLayout({ patient, requests }: { patient: Patient, requests:
 
 
 export function SupportingExamForm({ patient }: { patient: Patient }) {
-  const { control, handleSubmit, watch } = useFormContext();
+  const { control, handleSubmit, watch, setValue } = useFormContext();
+  const { toast } = useToast();
   const requests = watch('requests');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  function onSubmit(values: any) {
-    console.log('Supporting Exam submitted:', values);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      setValue('fileUpload', file.name, { shouldValidate: true });
+      toast({
+        title: 'Berkas Dipilih',
+        description: `Nama berkas: ${file.name}`,
+      });
+    }
+  };
+
+  const triggerFileSelect = () => fileInputRef.current?.click();
+
+  async function onSubmit(values: any) {
+    setIsSaving(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Supporting Exam submitted:', { ...values, uploadedFile: uploadedFile?.name });
+    setIsSaving(false);
+    toast({
+      title: 'Pemeriksaan Penunjang Disimpan',
+      description: 'Data hasil dan permintaan pemeriksaan penunjang telah berhasil disimpan.',
+    });
   }
 
   const handlePrint = () => {
@@ -320,30 +343,29 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
         
         <div className="space-y-2">
             <Label>Unggah Berkas Laporan</Label>
-            <div className="flex items-center gap-4">
-                <FormField
-                control={control}
-                name="fileUpload"
-                render={({ field }) => (
-                    <FormItem className="flex-grow">
-                    <FormControl>
-                        <Input type="file" />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <Button type="button" variant="outline">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                <Button type="button" variant="outline" onClick={triggerFileSelect}>
                     <Upload className="mr-2 h-4 w-4" />
-                    Unggah
+                    Pilih Berkas...
                 </Button>
+                 {uploadedFile && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 border rounded-md bg-secondary/50 flex-grow">
+                        <FileCheck className='h-4 w-4 text-green-600' />
+                        <span className="truncate">{uploadedFile.name}</span>
+                        <Button type='button' variant='ghost' size='icon' className='h-6 w-6 ml-auto' onClick={() => setUploadedFile(null)}>
+                            <X className='h-4 w-4' />
+                        </Button>
+                    </div>
+                )}
             </div>
+             <FormField control={control} name="fileUpload" render={() => <FormMessage />} />
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button type="submit">
-            <Save className="mr-2 h-4 w-4" />
-            Simpan Pemeriksaan Penunjang
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? 'Menyimpan...' : 'Simpan Pemeriksaan Penunjang'}
           </Button>
         </div>
         <div className="hidden">

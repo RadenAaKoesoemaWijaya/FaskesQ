@@ -10,13 +10,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Printer, Search, Loader2, Info, BrainCircuit, PlusCircle, Trash2, Send } from 'lucide-react';
+import { Printer, Search, Loader2, Info, BrainCircuit, PlusCircle, Trash2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Patient } from '@/lib/types';
 import { useState } from 'react';
-import { getMedicalResume, runSuggestIcd10, runSuggestDifferentialDiagnosis, runSendToSatuSehat } from '@/app/actions';
+import { getMedicalResume, runSuggestIcd10, runSuggestDifferentialDiagnosis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -120,9 +120,6 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [diffDiagnosis, setDiffDiagnosis] = useState<string[]>([]);
   
-  // State for SATU SEHAT integration
-  const [isSending, setIsSending] = useState(false);
-
 
   const handleSearchIcd = async (index: number) => {
       setSearchTargetIndex(index);
@@ -255,47 +252,6 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
         setIsPrinting(false);
     }
   }
-  
-  const handleSendToSatuSehat = async () => {
-    const formData = getValues();
-    const workingDiagnosis = formData.diagnoses[0]?.value;
-
-    if (!workingDiagnosis) {
-        toast({
-            variant: 'destructive',
-            title: 'Diagnosis Kerja Kosong',
-            description: 'Harap isi diagnosis kerja (diagnosis pertama) sebelum mengirim ke SATUSEHAT.',
-        });
-        return;
-    }
-
-    setIsSending(true);
-    const result = await runSendToSatuSehat({
-        patientId: patient.id,
-        patientName: patient.name,
-        practitionerName: 'Dr. Amanda Sari', // Placeholder
-        diagnosis: workingDiagnosis,
-        encounterData: {
-            anamnesis: formData.mainComplaint,
-            physicalExam: `TD: ${formData.bloodPressure}, N: ${formData.heartRate}, RR: ${formData.respiratoryRate}, T: ${formData.temperature}`
-        }
-    });
-
-    if (result.success && result.data) {
-        toast({
-            title: 'Berhasil Terkirim ke SATUSEHAT',
-            description: `Data encounter dengan ID: ${result.data.encounterId} telah dikirim.`
-        });
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Gagal Mengirim ke SATUSEHAT',
-            description: result.error,
-        });
-    }
-
-    setIsSending(false);
-  }
 
 
   return (
@@ -375,22 +331,16 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
                     {(errors.diagnoses as any)?.message}
                 </p>
             )}
-            <div className="flex justify-between items-center mt-2">
-                 <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ value: '' })}
-                    disabled={fields.length >= 10}
-                >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Tambah Diagnosis
-                </Button>
-                <Button type="button" variant="default" onClick={handleSendToSatuSehat} disabled={isSending}>
-                    {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    {isSending ? 'Mengirim...' : 'Kirim ke SATUSEHAT'}
-                </Button>
-            </div>
+             <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ value: '' })}
+                disabled={fields.length >= 10}
+            >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Tambah Diagnosis
+            </Button>
         </div>
       </div>
       

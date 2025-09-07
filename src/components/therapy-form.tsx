@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Save, Trash2, Bot, Loader2, BedDouble, Download } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Bot, Loader2, BedDouble, Download, Send } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getMedicalResume } from '@/app/actions';
+import { getMedicalResume, runSendToSatuSehat } from '@/app/actions';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,7 @@ export function TherapyForm({ patient }: { patient: Patient }) {
   const { toast } = useToast();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [medicalResume, setMedicalResume] = useState('');
 
@@ -153,7 +154,7 @@ export function TherapyForm({ patient }: { patient: Patient }) {
             const startTime = localStorage.getItem(storageKey);
             let toastDescription = 'Data pemeriksaan berhasil disimpan dan ringkasan dibuat.';
 
-            if (startTime) {
+            if (startTime && startTime !== 'completed') {
                 const elapsed = Math.floor((Date.now() - parseInt(startTime, 10)) / 1000);
                 const minutes = Math.floor(elapsed / 60);
                 const seconds = elapsed % 60;
@@ -178,6 +179,47 @@ export function TherapyForm({ patient }: { patient: Patient }) {
     } finally {
         setIsProcessing(false);
     }
+  }
+
+  const handleSendToSatuSehat = async () => {
+    const formData = getValues();
+    const workingDiagnosis = formData.diagnoses[0]?.value;
+
+    if (!workingDiagnosis) {
+        toast({
+            variant: 'destructive',
+            title: 'Diagnosis Kerja Kosong',
+            description: 'Harap isi diagnosis kerja (diagnosis pertama) sebelum mengirim ke SATUSEHAT.',
+        });
+        return;
+    }
+
+    setIsSending(true);
+    const result = await runSendToSatuSehat({
+        patientId: patient.id,
+        patientName: patient.name,
+        practitionerName: 'Dr. Amanda Sari', // Placeholder
+        diagnosis: workingDiagnosis,
+        encounterData: {
+            anamnesis: formData.mainComplaint,
+            physicalExam: `TD: ${formData.bloodPressure}, N: ${formData.heartRate}, RR: ${formData.respiratoryRate}, T: ${formData.temperature}`
+        }
+    });
+
+    if (result.success && result.data) {
+        toast({
+            title: 'Berhasil Terkirim ke SATUSEHAT',
+            description: `Data encounter dengan ID: ${result.data.encounterId} telah dikirim.`
+        });
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal Mengirim ke SATUSEHAT',
+            description: result.error,
+        });
+    }
+
+    setIsSending(false);
   }
 
   return (
@@ -330,17 +372,23 @@ export function TherapyForm({ patient }: { patient: Patient }) {
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2"><Bot /> Resume Medis AI</DialogTitle>
                     <DialogDescription>
-                        Berikut adalah ringkasan medis yang dibuat oleh AI berdasarkan data yang telah Anda masukkan. Anda bisa menyalin atau merevisinya.
+                        Berikut adalah ringkasan medis yang dibuat oleh AI. Anda bisa menyalinnya atau mengirim data ke SATUSEHAT.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
                     <Textarea value={medicalResume} readOnly rows={10} className="bg-secondary" />
                 </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">Tutup</Button>
-                    </DialogClose>
-                    <Button type="button" onClick={() => navigator.clipboard.writeText(medicalResume)}>Salin Teks</Button>
+                <DialogFooter className="justify-between sm:justify-between">
+                     <Button type="button" variant="default" onClick={handleSendToSatuSehat} disabled={isSending}>
+                        {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        {isSending ? 'Mengirim...' : 'Kirim ke SATUSEHAT'}
+                    </Button>
+                    <div className="flex gap-2">
+                        <DialogClose asChild>
+                            <Button type="button" variant="secondary">Tutup</Button>
+                        </DialogClose>
+                        <Button type="button" onClick={() => navigator.clipboard.writeText(medicalResume)}>Salin Teks</Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
