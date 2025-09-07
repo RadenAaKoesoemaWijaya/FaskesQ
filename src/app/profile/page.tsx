@@ -9,11 +9,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { Camera, Mail, Phone, Shield, User, PenSquare } from 'lucide-react'
+import { Camera, Mail, Phone, Shield, User, PenSquare, Edit, Save, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
 
-function ProfileCard() {
+function ProfileCard({ onEditToggle, isEditing }: { onEditToggle: () => void, isEditing: boolean }) {
   return (
     <Card className="lg:col-span-1">
       <CardHeader className="items-center text-center">
@@ -40,13 +43,33 @@ function ProfileCard() {
           <span className="text-sm">+62 812-3456-7890</span>
         </div>
         <Separator />
-        <Button className="w-full">Edit Profil</Button>
+        <Button className="w-full" onClick={onEditToggle}>
+            {isEditing ? (
+                <>
+                    <Save className="mr-2 h-4 w-4" />
+                    <span>Lihat Profil</span>
+                </>
+            ) : (
+                <>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Edit Profil</span>
+                </>
+            )}
+        </Button>
       </CardContent>
     </Card>
   )
 }
 
-function AccountSettings() {
+function AccountSettings({ isEditing, onSave }: { isEditing: boolean, onSave: () => Promise<void> }) {
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        await onSave();
+        setIsSaving(false);
+    }
+    
     return (
         <Card>
             <CardHeader>
@@ -57,28 +80,28 @@ function AccountSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="fullName">Nama Lengkap</Label>
-                        <Input id="fullName" defaultValue="Dr. Amanda Sari" />
+                        <Input id="fullName" defaultValue="Dr. Amanda Sari" disabled={!isEditing} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="specialty">Spesialisasi</Label>
-                        <Input id="specialty" defaultValue="Dokter Umum" />
+                        <Input id="specialty" defaultValue="Dokter Umum" disabled={!isEditing} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="strNumber">Nomor Surat Tanda Registrasi (STR)</Label>
-                        <Input id="strNumber" defaultValue="1234567890123456" />
+                        <Input id="strNumber" defaultValue="1234567890123456" disabled={!isEditing} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="sipNumber">Nomor Surat Ijin Praktek (SIP)</Label>
-                        <Input id="sipNumber" defaultValue="SIP/123/456/2024" />
+                        <Input id="sipNumber" defaultValue="SIP/123/456/2024" disabled={!isEditing} />
                     </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="email">Alamat Email</Label>
-                    <Input id="email" type="email" defaultValue="amanda.sari@faskesq.com" />
+                    <Input id="email" type="email" defaultValue="amanda.sari@faskesq.com" disabled={!isEditing} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="phoneNumber">Nomor Telepon</Label>
-                    <Input id="phoneNumber" type="tel" defaultValue="+62 812-3456-7890" />
+                    <Input id="phoneNumber" type="tel" defaultValue="+62 812-3456-7890" disabled={!isEditing} />
                 </div>
                 <Separator />
                 <div className="space-y-4">
@@ -89,15 +112,18 @@ function AccountSettings() {
                     <p className="text-sm text-muted-foreground">
                         Tanda tangan ini akan digunakan pada dokumen medis seperti surat rujukan.
                     </p>
-                    <div className="border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/50 min-h-[120px]">
+                    <div className={cn("border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/50 min-h-[120px]", !isEditing && "opacity-70")}>
                         <Image src="https://placehold.co/200x50/png?text=Tanda+Tangan" alt="Tanda Tangan Digital" width={200} height={50} data-ai-hint="signature" />
                     </div>
-                    <Button variant="outline">
+                    <Button variant="outline" disabled={!isEditing}>
                         Unggah Tanda Tangan Baru
                     </Button>
                 </div>
                  <div className="flex justify-end pt-6">
-                    <Button>Simpan Perubahan</Button>
+                    <Button onClick={handleSave} disabled={!isEditing || isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Simpan Perubahan
+                    </Button>
                 </div>
             </CardContent>
         </Card>
@@ -105,6 +131,33 @@ function AccountSettings() {
 }
 
 function SecuritySettings() {
+    const { toast } = useToast();
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const handleUpdatePassword = async () => {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            toast({ title: "Formulir Tidak Lengkap", description: "Harap isi semua kolom kata sandi.", variant: 'destructive'});
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            toast({ title: "Kata Sandi Tidak Cocok", description: "Kata sandi baru dan konfirmasi tidak sama.", variant: 'destructive'});
+            return;
+        }
+
+        setIsUpdating(true);
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({ title: "Kata Sandi Diperbarui", description: "Kata sandi Anda telah berhasil diperbarui."});
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setIsUpdating(false);
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -114,16 +167,16 @@ function SecuritySettings() {
             <CardContent className="space-y-6">
                 <div className="space-y-2">
                     <Label htmlFor="current-password">Kata Sandi Saat Ini</Label>
-                    <Input id="current-password" type="password" />
+                    <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="new-password">Kata Sandi Baru</Label>
-                        <Input id="new-password" type="password" />
+                        <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="confirm-password">Konfirmasi Kata Sandi Baru</Label>
-                        <Input id="confirm-password" type="password" />
+                        <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                     </div>
                 </div>
                 <Separator />
@@ -135,7 +188,10 @@ function SecuritySettings() {
                     </div>
                 </div>
                  <div className="flex justify-end">
-                    <Button>Perbarui Kata Sandi</Button>
+                    <Button onClick={handleUpdatePassword} disabled={isUpdating}>
+                         {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Perbarui Kata Sandi
+                    </Button>
                 </div>
             </CardContent>
         </Card>
@@ -144,11 +200,28 @@ function SecuritySettings() {
 
 
 export default function ProfilePage() {
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleToggleEdit = () => {
+    setIsEditing(prev => !prev);
+  }
+
+  const handleSaveChanges = async () => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    toast({
+        title: "Profil Disimpan",
+        description: "Perubahan pada profil Anda telah berhasil disimpan.",
+    });
+    setIsEditing(false);
+  }
+
   return (
     <div className="animate-in fade-in-50">
       <PageHeader title="Profil Pengguna" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <ProfileCard />
+        <ProfileCard onEditToggle={handleToggleEdit} isEditing={isEditing} />
         <div className="lg:col-span-2">
           <Tabs defaultValue="account">
             <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -162,7 +235,7 @@ export default function ProfilePage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="account">
-                <AccountSettings />
+                <AccountSettings isEditing={isEditing} onSave={handleSaveChanges} />
             </TabsContent>
             <TabsContent value="security">
                 <SecuritySettings />
@@ -173,3 +246,5 @@ export default function ProfilePage() {
     </div>
   )
 }
+
+    
