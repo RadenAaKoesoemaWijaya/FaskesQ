@@ -1,6 +1,6 @@
 
-import type { Patient, PatientRegistrationData, Testimonial, TestimonialSubmissionData, ScreeningCluster, ScreeningQuestion, ScreeningResult } from './types';
-import { patients, testimonials, screeningClusters, screeningQuestions, examinations, screeningResults } from './placeholder-data';
+import type { Patient, PatientRegistrationData, Testimonial, TestimonialSubmissionData, ScreeningCluster, ScreeningQuestion, ScreeningResult, TopDisease } from './types';
+import { patients, testimonials, screeningClusters, screeningQuestions, examinations, screeningResults, diseaseStats } from './placeholder-data';
 
 // --- DATA DUMMY SECTION ---
 // All data operations will be performed on these in-memory arrays.
@@ -182,4 +182,13 @@ export async function saveScreeningResult(patientId: string, result: Omit<Screen
         created_at: new Date().toISOString(),
     };
     dummyScreeningResults.push(newResult);
+}
+
+// --- DASHBOARD FUNCTIONS ---
+
+export async function getTopDiseases(): Promise<TopDisease[]> {
+    await delay(400);
+    // In a real app, this would be a complex SQL query.
+    // Here, we just return the sorted placeholder data.
+    return diseaseStats.sort((a, b) => a.count - b.count);
 }

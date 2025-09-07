@@ -1,6 +1,6 @@
 // src/lib/placeholder-data.ts
 
-import type { Patient, Testimonial, ScreeningCluster, ScreeningQuestion, Examination, ScreeningResult } from './types';
+import type { Patient, Testimonial, ScreeningCluster, ScreeningQuestion, Examination, ScreeningResult, TopDisease } from './types';
 
 export const examinations: Examination[] = [
   {
@@ -267,4 +267,17 @@ export const screeningClusters: ScreeningCluster[] = [
     questions: screeningQuestions.filter(q => q.cluster_id === 'cluster-geriatri' || q.cluster_id === 'cluster-4'),
     created_at: '2024-01-01T00:00:00Z',
   },
+];
+
+export const diseaseStats: TopDisease[] = [
+    { name: 'Hipertensi', count: 125 },
+    { name: 'Common Cold', count: 98 },
+    { name: 'Diabetes T2', count: 88 },
+    { name: 'Dispepsia', count: 76 },
+    { name: 'Dermatitis', count: 65 },
+    { name: 'ISPA', count: 62 },
+    { name: 'Myalgia', count: 54 },
+    { name: 'Gout Arthritis', count: 48 },
+    { name: 'Asma', count: 41 },
+    { name: 'Vertigo', count: 35 },
 ];

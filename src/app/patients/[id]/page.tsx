@@ -37,12 +37,19 @@ const diagnosisSchema = z.object({
   value: z.string().min(1, 'Diagnosis tidak boleh kosong.'),
 });
 
+const screeningAnswerSchema = z.object({
+  questionId: z.string(),
+  questionText: z.string(),
+  answer: z.string().min(1, 'Jawaban tidak boleh kosong.'),
+});
+
 const formSchema = z.object({
   // Anamnesis
   mainComplaint: z.string().min(1, 'Keluhan utama tidak boleh kosong.'),
   presentIllness: z.string().min(1, 'Riwayat penyakit sekarang tidak boleh kosong.'),
   pastMedicalHistory: z.string().optional(),
   drugAllergy: z.string().optional(),
+  screeningAnswers: z.array(screeningAnswerSchema).optional(),
   // Physical Exam
   consciousness: z.string().min(1, "Tingkat kesadaran harus diisi"),
   bloodPressure: z.string().min(1, "Tekanan darah harus diisi"),
@@ -130,28 +137,31 @@ const formSchema = z.object({
 
 function ServiceTimer({ patientId }: { patientId: string }) {
   const [elapsedTime, setElapsedTime] = useState('00:00');
-  const [isServiceActive, setIsServiceActive] = useState(true);
+  const [isServiceActive, setIsServiceActive] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const storageKey = `serviceStartTime-${patientId}`;
     let startTime = localStorage.getItem(storageKey);
 
+    if (startTime === 'completed') {
+      setIsServiceActive(false);
+      return;
+    }
+
     if (!startTime) {
       startTime = String(Date.now());
       localStorage.setItem(storageKey, startTime);
-    } else if (localStorage.getItem(storageKey) === 'completed') {
-      setIsServiceActive(false);
-      return;
     }
     
     const start = parseInt(startTime, 10);
     setIsServiceActive(true);
 
     const updateTimer = () => {
-      if (localStorage.getItem(storageKey) === 'completed') {
+       if (localStorage.getItem(storageKey) === 'completed') {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setIsServiceActive(false);
+        setElapsedTime('Selesai');
         return;
       }
       const now = Date.now();
@@ -161,7 +171,7 @@ function ServiceTimer({ patientId }: { patientId: string }) {
       setElapsedTime(`${minutes}:${seconds}`);
     };
     
-    updateTimer();
+    updateTimer(); // Initial call
     intervalRef.current = setInterval(updateTimer, 1000);
 
     return () => {
@@ -365,6 +375,7 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
       presentIllness: '',
       pastMedicalHistory: '',
       drugAllergy: '',
+      screeningAnswers: [],
       consciousness: '',
       bloodPressure: '',
       heartRate: '',
@@ -457,7 +468,7 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('extremities', exam.extremities);
     methods.setValue('neurological', exam.neurological);
 
-    // Supporting Exams
+    // Supporting Exams - Results
     const { supportingExaminations: support } = data;
     methods.setValue('completeBloodCount', support.completeBloodCount);
     methods.setValue('urinalysis', support.urinalysis);
@@ -473,6 +484,14 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('eeg', support.eeg);
     methods.setValue('emg', support.emg);
     
+    // Supporting Exams - Requests
+    if (data.requests) {
+        methods.setValue('requests.lab', data.requests.lab, { shouldDirty: true });
+        methods.setValue('requests.radiology', data.requests.radiology, { shouldDirty: true });
+        methods.setValue('requests.other', data.requests.other, { shouldDirty: true });
+        methods.setValue('requests.notes', data.requests.notes, { shouldDirty: true });
+    }
+
     // Plan
     const { plan } = data;
     methods.setValue('prognosis', plan.prognosis);
@@ -543,6 +562,19 @@ function PatientDetailPageContent({ id }: { id: string }) {
       }
     }
     loadPatient();
+  }, [id]);
+
+  useEffect(() => {
+    // Clear the service timer if the user navigates away from this page
+    const handlePopState = () => {
+      localStorage.removeItem(`serviceStartTime-${id}`);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // Also clear on unmount
+      // localStorage.removeItem(`serviceStartTime-${id}`);
+    };
   }, [id]);
 
   if (!patient) {

@@ -63,6 +63,28 @@ const MedicalScribeOutputSchema = z.object({
       eeg: z.string().describe("Interpretation results of the electroencephalogram (EEG)."),
       emg: z.string().describe("Interpretation results of the electromyogram (EMG)."),
   }).describe("Results from supporting examinations, if mentioned in the transcript."),
+  requests: z.object({
+      lab: z.object({
+          completeBloodCount: z.boolean().describe("Check if a complete blood count is requested."),
+          urinalysis: z.boolean().describe("Check if a urinalysis is requested."),
+          bloodChemistry: z.boolean().describe("Check if blood chemistry tests are requested."),
+          microscopic: z.boolean().describe("Check if microscopic examinations are requested."),
+          immunology: z.boolean().describe("Check if immunology rapid tests are requested."),
+      }).describe("Laboratory tests requested."),
+      radiology: z.object({
+          xray: z.boolean().describe("Check if an X-ray is requested."),
+          ctScan: z.boolean().describe("Check if a CT Scan is requested."),
+          mri: z.boolean().describe("Check if an MRI is requested."),
+          ultrasound: z.boolean().describe("Check if an ultrasound (USG) is requested."),
+          petScan: z.boolean().describe("Check if a PET Scan is requested."),
+      }).describe("Radiology examinations requested."),
+      other: z.object({
+          ekg: z.boolean().describe("Check if an electrocardiogram (ECG/EKG) is requested."),
+          eeg: z.boolean().describe("Check if an electroencephalogram (EEG) is requested."),
+          emg: z.boolean().describe("Check if an electromyogram (EMG) is requested."),
+      }).describe("Other examinations requested."),
+      notes: z.string().describe("Any clinical notes or indications provided for the requested examinations.").describe("Any clinical notes or indications for the request."),
+  }).describe("Supporting examination requests mentioned in the transcript."),
   plan: z.object({
     prognosis: z.string().describe("The doctor's prognosis for the patient's condition (e.g., ad bonam, dubia ad malam)."),
     patientEducation: z.string().describe("Any education or advice given to the patient regarding their condition, treatment, or lifestyle."),
@@ -92,14 +114,15 @@ const prompt = ai.definePrompt({
   1. Anamnesis (keluhan utama, riwayat penyakit sekarang, riwayat dahulu, alergi).
   2. Pemeriksaan fisik lengkap (tanda vital, pemeriksaan head-to-toe).
   3. Hasil pemeriksaan penunjang (laboratorium, radiologi, dan tes lain) jika dibicarakan.
-  4. Penilaian dan rencana, termasuk prognosis, edukasi pasien, resep obat, dan tindakan lainnya.
+  4. Permintaan pemeriksaan penunjang. Jika dokter meminta pemeriksaan (cth: "Tolong cek darah lengkap", "Minta Rontgen thorax"), tandai (centang) permintaan yang sesuai di dalam output. Jika dokter memberikan alasan (cth: "...dengan indikasi demam"), catat alasan tersebut di kolom 'notes'.
+  5. Penilaian dan rencana, termasuk prognosis, edukasi pasien, resep obat, dan tindakan lainnya.
 
-  Jika ada informasi yang tidak disebutkan dalam transkrip, biarkan kolom yang bersangkutan kosong. Pastikan semua output dalam Bahasa Indonesia yang formal dan sesuai standar medis.
+  Jika ada informasi yang tidak disebutkan dalam transkrip, biarkan kolom yang bersangkutan kosong atau bernilai false untuk permintaan pemeriksaan. Pastikan semua output dalam Bahasa Indonesia yang formal dan sesuai standar medis.
 
   Transkrip:
   {{{transcript}}}
 
-  Berdasarkan transkrip ini, harap isi anamnesis, pemeriksaan fisik lengkap, hasil pemeriksaan penunjang yang disebutkan, dan rencana perawatan lengkap.
+  Berdasarkan transkrip ini, harap isi anamnesis, pemeriksaan fisik lengkap, hasil pemeriksaan penunjang yang disebutkan, permintaan pemeriksaan, dan rencana perawatan lengkap.
   `,
 });
 

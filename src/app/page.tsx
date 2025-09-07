@@ -3,14 +3,14 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { PlusCircle, Search, Users, Clock, DollarSign, BarChart, Trash2, Edit, MoreVertical, User, Venus, Mars } from 'lucide-react';
+import { PlusCircle, Search, Users, Clock, DollarSign, BarChart, Trash2, Edit, MoreVertical, User, Venus, Mars, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { getPatients } from '@/lib/data';
-import type { Patient } from '@/lib/types';
+import { getPatients, getTopDiseases } from '@/lib/data';
+import type { Patient, TopDisease } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import {
   ChartContainer,
@@ -19,7 +19,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from '@/components/ui/chart';
-import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +53,10 @@ const chartConfig = {
     label: 'Kunjungan',
     color: 'hsl(var(--primary))',
   },
+  count: {
+      label: 'Jumlah Kasus',
+      color: 'hsl(var(--chart-2))'
+  }
 };
 
 function PatientCard({ patient, onDelete }: { patient: Patient, onDelete: (id: string, name: string) => void }) {
@@ -153,25 +157,30 @@ function DashboardContent() {
   const query = searchParams.get('q') || '';
   const { toast } = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [topDiseases, setTopDiseases] = useState<TopDisease[]>([]);
   const [loading, setLoading] = useState(true);
   const [patientToDelete, setPatientToDelete] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
-    async function fetchPatients() {
+    async function fetchData() {
       setLoading(true);
       try {
-        const fetchedPatients = await getPatients(query);
+        const [fetchedPatients, fetchedTopDiseases] = await Promise.all([
+            getPatients(query),
+            getTopDiseases()
+        ]);
         setPatients(fetchedPatients);
+        setTopDiseases(fetchedTopDiseases);
       } catch (error) {
          toast({
             variant: 'destructive',
-            title: "Gagal Mengambil Data Pasien",
+            title: "Gagal Mengambil Data",
             description: (error as Error).message,
          });
       }
       setLoading(false);
     }
-    fetchPatients();
+    fetchData();
   }, [query, toast]);
 
   const handleDeleteRequest = (id: string, name: string) => {
@@ -220,8 +229,8 @@ function DashboardContent() {
         <StatsCard title="Pasien Baru Bulan Ini" value="+85" icon={<Users className="h-4 w-4 text-muted-foreground" />} description="Naik 10% dari bulan lalu" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
-        <Card className="lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
                 <BarChart />
@@ -250,33 +259,35 @@ function DashboardContent() {
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card>
              <CardHeader>
-                <CardTitle>Pasien Terakhir</CardTitle>
-                <CardDescription>5 pasien terakhir yang mendaftar.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                    <Activity />
+                    10 Penyakit Terbanyak
+                </CardTitle>
+                <CardDescription>Berdasarkan diagnosis yang tercatat.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
-                    {patients.slice(0, 5).map(patient => {
-                        const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
-                        return (
-                            <div key={patient.id} className="flex items-center gap-4">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarFallback className="bg-primary/10 text-primary">
-                                      <GenderIcon className="h-5 w-5" />
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <p className="font-medium">{patient.name}</p>
-                                    <p className="text-sm text-muted-foreground">{patient.medicalRecordNumber}</p>
-                                </div>
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/patients/${patient.id}`}>Lihat</Link>
-                                </Button>
-                            </div>
-                        )
-                    })}
-                </div>
+                <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+                   <RechartsBarChart layout="vertical" data={topDiseases} margin={{ right: 20, left: 10 }}>
+                        <CartesianGrid horizontal={false} />
+                        <YAxis 
+                            dataKey="name" 
+                            type="category" 
+                            tickLine={false} 
+                            axisLine={false} 
+                            tickMargin={10}
+                            width={120}
+                            style={{ fontSize: '12px' }}
+                        />
+                        <XAxis dataKey="count" type="number" />
+                        <Tooltip
+                            cursor={{ fill: 'hsl(var(--muted))' }}
+                            content={<ChartTooltipContent indicator="line" />}
+                        />
+                        <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                    </RechartsBarChart>
+                </ChartContainer>
             </CardContent>
         </Card>
       </div>

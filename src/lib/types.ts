@@ -77,3 +77,8 @@ export type ScreeningCluster = {
     questions: ScreeningQuestion[];
     created_at: string;
 }
+
+export type TopDisease = {
+    name: string;
+    count: number;
+}
