@@ -96,6 +96,8 @@ const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model', 'tool']),
   content: z.string(),
 });
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
 
 const TeleconsultChatbotInputSchema = z.object({
   patientId: z.string().describe("The unique ID of the patient."),
@@ -106,7 +108,7 @@ const TeleconsultChatbotInputSchema = z.object({
 export type TeleconsultChatbotInput = z.infer<typeof TeleconsultChatbotInputSchema>;
 
 const TeleconsultChatbotOutputSchema = z.object({
-  response: z.string().describe('The chatbot\'s response to the user\'s message.'),
+  history: z.array(ChatMessageSchema).describe('The updated history of the conversation.'),
 });
 export type TeleconsultChatbotOutput = z.infer<typeof TeleconsultChatbotOutputSchema>;
 
@@ -126,7 +128,7 @@ const teleconsultChatbotFlow = ai.defineFlow(
     
     // Convert Genkit-style history to Gemini-style history
     const history = input.history.map(h => ({
-        role: h.role === 'model' ? 'model' : 'user', // Treat tool responses as user role for Gemini history
+        role: h.role,
         parts: [{ text: h.content }],
     }));
 
@@ -152,6 +154,15 @@ const teleconsultChatbotFlow = ai.defineFlow(
         },
     });
 
-    return { response: result.text };
+    const outputHistory = result.history();
+    const lastResponse = outputHistory[outputHistory.length - 1];
+
+    // Convert the last response back to the simple ChatMessage format
+    const responseMessage: ChatMessage = {
+      role: lastResponse.role,
+      content: lastResponse.parts[0].text || '',
+    };
+    
+    return { history: [...input.history, responseMessage] };
   }
 );

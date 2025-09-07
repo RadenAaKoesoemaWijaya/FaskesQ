@@ -7,14 +7,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Bot, User, Loader2, ArrowLeft, Venus, Mars } from 'lucide-react';
-import { runTeleconsultChatbot } from '@/app/actions';
+import { runTeleconsultChatbot, type ChatMessage } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type Message = {
-  role: 'user' | 'model' | 'tool';
-  content: string;
-};
 
 interface TeleconsultChatbotProps {
   patient: Patient;
@@ -23,7 +19,7 @@ interface TeleconsultChatbotProps {
 
 export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps) {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -41,8 +37,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
         });
 
         if (result.success && result.data) {
-          const initialMessage: Message = { role: 'model', content: result.data.response };
-          setMessages([initialMessage]);
+          setMessages(result.data.history);
         } else {
           throw new Error(result.error || 'Gagal memulai percakapan dengan AI.');
         }
@@ -74,7 +69,7 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
     e.preventDefault();
     if (!input || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    const userMessage: ChatMessage = { role: 'user', content: input };
     const currentMessages = [...messages, userMessage];
     setMessages(currentMessages);
     setInput('');
@@ -85,12 +80,11 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
         patientId: patient.id,
         patientName: patient.name,
         patientDob: patient.dateOfBirth,
-        history: currentMessages.map(m => ({role: m.role, content: m.content})),
+        history: currentMessages,
       });
 
       if (result.success && result.data) {
-        const modelMessage: Message = { role: 'model', content: result.data.response };
-        setMessages((prev) => [...prev, modelMessage]);
+        setMessages(result.data.history);
       } else {
         throw new Error(result.error || 'Gagal mendapatkan respons dari AI.');
       }
@@ -128,34 +122,36 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((message, index) => (
-            <div
-              key={index}
-              className={cn(
-                'flex items-start gap-3',
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              )}
-            >
-              {message.role === 'model' && (
-                <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
-                  <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
-                </Avatar>
-              )}
-              <div
+             message.role !== 'tool' && (
+                <div
+                key={index}
                 className={cn(
-                  'max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg',
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    'flex items-start gap-3',
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
                 )}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              </div>
-               {message.role === 'user' && (
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback><User className="h-5 w-5"/></AvatarFallback>
-                </Avatar>
-              )}
-            </div>
+                >
+                {message.role === 'model' && (
+                    <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+                    <AvatarFallback><Bot className="h-5 w-5" /></AvatarFallback>
+                    </Avatar>
+                )}
+                <div
+                    className={cn(
+                    'max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-lg',
+                    message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    )}
+                >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </div>
+                {message.role === 'user' && (
+                    <Avatar className="h-8 w-8">
+                    <AvatarFallback><User className="h-5 w-5"/></AvatarFallback>
+                    </Avatar>
+                )}
+                </div>
+            )
           ))}
           {isLoading && (
             <div className="flex items-start gap-3 justify-start">

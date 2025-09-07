@@ -24,6 +24,7 @@ import {
   teleconsultChatbot,
   type TeleconsultChatbotInput,
   type TeleconsultChatbotOutput,
+  type ChatMessage,
 } from '@/ai/flows/teleconsult-chatbot-flow';
 import {
     verifyBpjs,
@@ -133,7 +134,7 @@ export async function deletePatientAction(id: string) {
     }
 }
 
-export type { TeleconsultChatbotOutput };
+export type { TeleconsultChatbotOutput, ChatMessage };
 
 export async function runTeleconsultChatbot(
   input: TeleconsultChatbotInput
