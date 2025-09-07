@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { Camera, Mail, Phone, Shield, User, PenSquare, Edit, Save, Loader2 } from 'lucide-react'
+import { Camera, Mail, Phone, Shield, User, PenSquare, Edit, Save, Loader2, Upload } from 'lucide-react'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -62,7 +62,33 @@ function ProfileCard({ onEditToggle, isEditing }: { onEditToggle: () => void, is
 }
 
 function AccountSettings({ isEditing, onSave }: { isEditing: boolean, onSave: () => Promise<void> }) {
+    const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
+    const [signature, setSignature] = useState('https://placehold.co/200x50/png?text=Tanda+Tangan');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSignatureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSignature(reader.result as string);
+                toast({
+                    title: "Pratinjau Tanda Tangan Diperbarui",
+                    description: "Klik 'Simpan Perubahan' untuk menyimpan tanda tangan baru Anda.",
+                })
+            };
+            reader.readAsDataURL(file);
+        } else {
+             toast({
+                title: "File Tidak Valid",
+                description: "Harap pilih file gambar (PNG, JPG, dll).",
+                variant: 'destructive',
+            })
+        }
+    }
+
+    const triggerFileSelect = () => fileInputRef.current?.click();
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -113,9 +139,11 @@ function AccountSettings({ isEditing, onSave }: { isEditing: boolean, onSave: ()
                         Tanda tangan ini akan digunakan pada dokumen medis seperti surat rujukan.
                     </p>
                     <div className={cn("border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/50 min-h-[120px]", !isEditing && "opacity-70")}>
-                        <Image src="https://placehold.co/200x50/png?text=Tanda+Tangan" alt="Tanda Tangan Digital" width={200} height={50} data-ai-hint="signature" />
+                        <Image src={signature} alt="Tanda Tangan Digital" width={200} height={50} data-ai-hint="signature" style={{ objectFit: 'contain' }} />
                     </div>
-                    <Button variant="outline" disabled={!isEditing}>
+                    <input type="file" ref={fileInputRef} onChange={handleSignatureUpload} accept="image/*" className="hidden" />
+                    <Button variant="outline" disabled={!isEditing} onClick={triggerFileSelect}>
+                        <Upload className="mr-2 h-4 w-4" />
                         Unggah Tanda Tangan Baru
                     </Button>
                 </div>
@@ -246,5 +274,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
-    
