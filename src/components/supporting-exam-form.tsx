@@ -66,7 +66,7 @@ function RequestPrintLayout({ patient, requests }: { patient: Patient, requests:
                     <h2 className="text-xl font-bold">Formulir Permintaan Pemeriksaan Penunjang</h2>
                     <p className="text-sm">Tanggal: {today}</p>
                 </div>
-            </header
+            </header>
             <Separator className="my-6" />
             <section className="mb-6">
                 <h3 className="font-bold text-lg mb-2">Data Pasien</h3>
