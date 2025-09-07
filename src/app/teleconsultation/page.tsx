@@ -21,6 +21,9 @@ import {
   Phone,
   Bot,
   ArrowLeft,
+  User,
+  Venus,
+  Mars
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -64,27 +67,31 @@ function PatientList({
       <ScrollArea className="flex-grow">
         <CardContent>
           <div className="space-y-2">
-            {patients.map((patient) => (
-              <Button
-                key={patient.id}
-                variant={
-                  selectedPatientId === patient.id ? 'secondary' : 'ghost'
-                }
-                className="w-full h-auto justify-start p-2"
-                onClick={() => onSelectPatient(patient)}
-              >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={patient.avatarUrl} alt={patient.name} />
-                  <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="ml-4 text-left">
-                  <p className="font-medium">{patient.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {patient.medicalRecordNumber}
-                  </p>
-                </div>
-              </Button>
-            ))}
+            {patients.map((patient) => {
+              const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
+              return (
+                <Button
+                  key={patient.id}
+                  variant={
+                    selectedPatientId === patient.id ? 'secondary' : 'ghost'
+                  }
+                  className="w-full h-auto justify-start p-2"
+                  onClick={() => onSelectPatient(patient)}
+                >
+                  <Avatar className="h-10 w-10">
+                     <AvatarFallback className="bg-primary/10 text-primary">
+                        <GenderIcon className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="ml-4 text-left">
+                    <p className="font-medium">{patient.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {patient.medicalRecordNumber}
+                    </p>
+                  </div>
+                </Button>
+              )
+            })}
           </div>
         </CardContent>
       </ScrollArea>
@@ -120,12 +127,15 @@ function ConsultationModeSelector({
     const url = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(url, '_blank');
   };
+  
+  const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
       <Avatar className="h-24 w-24">
-        <AvatarImage src={patient.avatarUrl} alt={patient.name} />
-        <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+        <AvatarFallback className="bg-primary/10 text-primary text-4xl">
+            <GenderIcon className="h-12 w-12" />
+        </AvatarFallback>
       </Avatar>
       <h2 className="text-2xl font-bold">
         Mulai Konsultasi dengan {patient.name}

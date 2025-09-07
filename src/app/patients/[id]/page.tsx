@@ -20,7 +20,7 @@ import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import type { Patient, ScreeningResult } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit, ShieldQuestion } from 'lucide-react';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit, ShieldQuestion, Venus, Mars } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState } from 'react';
@@ -504,13 +504,16 @@ function PatientDetailPageContent({ id }: { id: string }) {
     );
   }
 
+  const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
+
   return (
     <div className="animate-in fade-in-50">
       <PageHeader title={patient.name}>
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={patient.avatarUrl} alt={patient.name} data-ai-hint="person face" />
-            <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary">
+              <GenderIcon className="h-8 w-8" />
+            </AvatarFallback>
           </Avatar>
         </div>
       </PageHeader>

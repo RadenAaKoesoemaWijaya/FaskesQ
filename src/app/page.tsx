@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { PlusCircle, Search, Users, Clock, DollarSign, BarChart, Trash2, Edit, MoreVertical } from 'lucide-react';
+import { PlusCircle, Search, Users, Clock, DollarSign, BarChart, Trash2, Edit, MoreVertical, User, Venus, Mars } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -58,13 +58,16 @@ const chartConfig = {
 function PatientCard({ patient, onDelete }: { patient: Patient, onDelete: (id: string, name: string) => void }) {
   const router = useRouter();
 
+  const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <Link href={`/patients/${patient.id}`} className="flex items-center gap-4 group">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={patient.avatarUrl} alt={patient.name} data-ai-hint="person portrait" />
-            <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary">
+              <GenderIcon className="h-6 w-6" />
+            </AvatarFallback>
           </Avatar>
           <div>
             <CardTitle className="font-headline text-lg group-hover:underline">{patient.name}</CardTitle>
@@ -254,21 +257,25 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {patients.slice(0, 5).map(patient => (
-                        <div key={patient.id} className="flex items-center gap-4">
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={patient.avatarUrl} alt={patient.name} />
-                                <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                                <p className="font-medium">{patient.name}</p>
-                                <p className="text-sm text-muted-foreground">{patient.medicalRecordNumber}</p>
+                    {patients.slice(0, 5).map(patient => {
+                        const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
+                        return (
+                            <div key={patient.id} className="flex items-center gap-4">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarFallback className="bg-primary/10 text-primary">
+                                      <GenderIcon className="h-5 w-5" />
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <p className="font-medium">{patient.name}</p>
+                                    <p className="text-sm text-muted-foreground">{patient.medicalRecordNumber}</p>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/patients/${patient.id}`}>Lihat</Link>
+                                </Button>
                             </div>
-                            <Button variant="outline" size="sm" asChild>
-                                <Link href={`/patients/${patient.id}`}>Lihat</Link>
-                            </Button>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </CardContent>
         </Card>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Bot, User, Loader2, ArrowLeft } from 'lucide-react';
+import { Send, Bot, User, Loader2, ArrowLeft, Venus, Mars } from 'lucide-react';
 import { runTeleconsultChatbot } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -107,6 +107,8 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
     }
   };
 
+  const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
+
   return (
     <div className="flex flex-col h-full">
        <div className="flex items-center p-4 border-b">
@@ -114,8 +116,9 @@ export function TeleconsultChatbot({ patient, onBack }: TeleconsultChatbotProps)
             <ArrowLeft />
          </Button>
         <Avatar className="h-10 w-10">
-          <AvatarImage src={patient.avatarUrl} alt={patient.name} />
-          <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary">
+                <GenderIcon className="h-5 w-5" />
+            </AvatarFallback>
         </Avatar>
         <div className="ml-4">
           <h3 className="font-semibold">Konsultasi dengan {patient.name}</h3>

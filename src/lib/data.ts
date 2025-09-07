@@ -56,7 +56,7 @@ export async function addPatient(data: PatientRegistrationData): Promise<string>
     const newPatient: Patient = {
         id: newId,
         ...data,
-        avatarUrl: `https://i.pravatar.cc/150?u=${newId}`,
+        // No avatarUrl, we will use icons instead
         history: [],
         screeningHistory: [],
         created_at: new Date().toISOString(),

@@ -36,7 +36,6 @@ export type ScreeningResult = {
 
 export type Patient = PatientRegistrationData & {
   id: string;
-  avatarUrl: string;
   history: Examination[];
   screeningHistory?: ScreeningResult[];
   created_at: string;
