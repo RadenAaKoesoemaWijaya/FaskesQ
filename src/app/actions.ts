@@ -25,6 +25,16 @@ import {
   type TeleconsultChatbotInput,
   type TeleconsultChatbotOutput,
 } from '@/ai/flows/teleconsult-chatbot-flow';
+import {
+    verifyBpjs,
+    type VerifyBpjsInput,
+    type VerifyBpjsOutput,
+} from '@/ai/flows/bpjs-verification-flow';
+import {
+    sendToSatuSehat,
+    type SendToSatuSehatInput,
+    type SendToSatuSehatOutput,
+} from '@/ai/flows/satusehat-integration-flow';
 import { deletePatient as dbDeletePatient, updatePatient as dbUpdatePatient } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 
@@ -99,12 +109,6 @@ export async function runSuggestDifferentialDiagnosis(input: SuggestDifferential
     data?: SuggestDifferentialDiagnosisOutput;
     error?: string;
 }> {
-    if (!process.env.GEMINI_API_KEY) {
-        return {
-            success: false,
-            error: 'Kunci API Gemini tidak dikonfigurasi.',
-        };
-    }
     try {
         const result = await suggestDifferentialDiagnosis(input);
         return {success: true, data: result};
@@ -149,4 +153,35 @@ export async function runTeleconsultChatbot(
         'Terjadi kesalahan saat menghubungi chatbot. Silakan coba lagi.',
     };
   }
+}
+
+export type { VerifyBpjsOutput };
+export async function runVerifyBpjs(input: VerifyBpjsInput): Promise<{
+  success: boolean;
+  data?: VerifyBpjsOutput;
+  error?: string;
+}> {
+    try {
+        const result = await verifyBpjs(input);
+        return {success: true, data: result};
+    } catch (error: any) {
+        console.error('Error verifying BPJS:', error);
+        return { success: false, error: error.message || 'Terjadi kesalahan saat verifikasi BPJS.' };
+    }
+}
+
+
+export type { SendToSatuSehatOutput };
+export async function runSendToSatuSehat(input: SendToSatuSehatInput): Promise<{
+  success: boolean;
+  data?: SendToSatuSehatOutput;
+  error?: string;
+}> {
+    try {
+        const result = await sendToSatuSehat(input);
+        return {success: true, data: result};
+    } catch (error: any) {
+        console.error('Error sending to SATU SEHAT:', error);
+        return { success: false, error: error.message || 'Gagal mengirim data ke SATU SEHAT.' };
+    }
 }

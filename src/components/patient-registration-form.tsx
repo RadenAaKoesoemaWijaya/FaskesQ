@@ -11,6 +11,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,8 +26,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { addPatient, updatePatient } from '@/lib/data';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, BadgeCheck, CircleAlert } from 'lucide-react';
 import { Patient } from '@/lib/types';
+import { runVerifyBpjs, type VerifyBpjsOutput } from '@/app/actions';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -61,6 +64,8 @@ export function PatientRegistrationForm({ mode = 'create', patient }: PatientReg
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<VerifyBpjsOutput | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,6 +83,25 @@ export function PatientRegistrationForm({ mode = 'create', patient }: PatientReg
   });
 
   const paymentMethod = form.watch('paymentMethod');
+  const bpjsNumber = form.watch('insuranceNumber');
+
+  async function handleBpjsVerification() {
+      if (!bpjsNumber) {
+          toast({ title: 'Nomor BPJS Kosong', description: 'Harap masukkan nomor BPJS untuk verifikasi.', variant: 'destructive'});
+          return;
+      }
+      setIsVerifying(true);
+      setVerificationResult(null);
+      const result = await runVerifyBpjs({ bpjsNumber });
+      if (result.success && result.data) {
+          setVerificationResult(result.data);
+          toast({ title: 'Verifikasi Berhasil', description: `Status: ${result.data.status}`});
+      } else {
+          setVerificationResult({ success: false, status: 'Gagal Diverifikasi', patientName: 'N/A' });
+          toast({ title: 'Verifikasi Gagal', description: result.error, variant: 'destructive'});
+      }
+      setIsVerifying(false);
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -210,7 +234,10 @@ export function PatientRegistrationForm({ mode = 'create', patient }: PatientReg
               <FormItem>
                 <FormLabel>Metode Pembayaran</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setVerificationResult(null); // Reset verification on change
+                  }}
                   defaultValue={field.value}
                 >
                   <FormControl>
@@ -235,9 +262,27 @@ export function PatientRegistrationForm({ mode = 'create', patient }: PatientReg
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nomor Asuransi/BPJS</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Masukkan nomor kartu" {...field} />
-                  </FormControl>
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input placeholder="Masukkan nomor kartu" {...field} />
+                    </FormControl>
+                    {paymentMethod === 'BPJS' && (
+                        <Button type="button" variant="outline" onClick={handleBpjsVerification} disabled={isVerifying}>
+                            {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            Verifikasi BPJS
+                        </Button>
+                    )}
+                  </div>
+                   {verificationResult && (
+                      <Alert variant={verificationResult.success ? 'default' : 'destructive'} className="mt-4">
+                          {verificationResult.success ? <BadgeCheck className="h-4 w-4" /> : <CircleAlert className="h-4 w-4" />}
+                          <AlertTitle>{verificationResult.success ? 'Verifikasi Berhasil' : 'Verifikasi Gagal'}</AlertTitle>
+                          <AlertDescription>
+                              Status: <strong>{verificationResult.status}</strong>
+                              {verificationResult.success && `, Nama: ${verificationResult.patientName}`}
+                          </AlertDescription>
+                      </Alert>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
