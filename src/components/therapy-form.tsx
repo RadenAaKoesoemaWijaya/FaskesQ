@@ -149,7 +149,6 @@ export function TherapyForm({ patient }: { patient: Patient }) {
             setMedicalResume(result.data.medicalResume);
             setIsModalOpen(true);
 
-            // Timer logic
             const storageKey = `serviceStartTime-${patient.id}`;
             const startTime = localStorage.getItem(storageKey);
             let toastDescription = 'Data pemeriksaan berhasil disimpan dan ringkasan dibuat.';
@@ -159,7 +158,7 @@ export function TherapyForm({ patient }: { patient: Patient }) {
                 const minutes = Math.floor(elapsed / 60);
                 const seconds = elapsed % 60;
                 toastDescription += ` Total waktu pelayanan: ${minutes} menit ${seconds} detik.`;
-                localStorage.removeItem(storageKey);
+                localStorage.setItem(storageKey, 'completed'); // Mark service as completed
             }
             
             toast({

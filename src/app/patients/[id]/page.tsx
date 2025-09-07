@@ -130,26 +130,28 @@ const formSchema = z.object({
 
 function ServiceTimer({ patientId }: { patientId: string }) {
   const [elapsedTime, setElapsedTime] = useState('00:00');
+  const [isServiceActive, setIsServiceActive] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const storageKey = `serviceStartTime-${patientId}`;
-    if (typeof window === 'undefined') return;
-
     let startTime = localStorage.getItem(storageKey);
 
     if (!startTime) {
       startTime = String(Date.now());
       localStorage.setItem(storageKey, startTime);
+    } else if (localStorage.getItem(storageKey) === 'completed') {
+      setIsServiceActive(false);
+      return;
     }
     
     const start = parseInt(startTime, 10);
+    setIsServiceActive(true);
 
     const updateTimer = () => {
-      // If the key is removed, the service is considered complete.
-      if (!localStorage.getItem(storageKey)) {
+      if (localStorage.getItem(storageKey) === 'completed') {
         if (intervalRef.current) clearInterval(intervalRef.current);
-        setElapsedTime('Selesai');
+        setIsServiceActive(false);
         return;
       }
       const now = Date.now();
@@ -167,8 +169,8 @@ function ServiceTimer({ patientId }: { patientId: string }) {
     };
   }, [patientId]);
   
-  if (typeof window !== 'undefined' && !localStorage.getItem(`serviceStartTime-${patientId}`)) {
-    return (
+  if (!isServiceActive) {
+     return (
        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">
           <Clock className="h-4 w-4 text-green-500" />
           <span>Pelayanan Selesai</span>
