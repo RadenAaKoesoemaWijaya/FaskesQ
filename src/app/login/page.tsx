@@ -23,7 +23,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('123456');
+  const [password, setPassword] = useState('12345678');
   const [captchaInput, setCaptchaInput] = useState('');
   const [captchaCode, setCaptchaCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +44,6 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
 
-    // Validate captcha
     if (captchaInput.toLowerCase() !== captchaCode.toLowerCase()) {
       setError('Kode captcha tidak sesuai');
       setIsLoading(false);
@@ -52,22 +51,21 @@ export default function LoginPage() {
       return;
     }
 
-    // Validate credentials
-    if (username !== 'admin' || password !== '123456') {
+    if (username !== 'admin' || password !== '12345678') {
       setError('Username atau password salah');
       setIsLoading(false);
       return;
     }
 
-    // Simulate login process
     await new Promise(resolve => setTimeout(resolve, 1000));
+
+    localStorage.setItem('isLoggedIn', 'true');
 
     toast({
       title: 'Login Berhasil',
       description: 'Selamat datang di FaskesQ!',
     });
 
-    // Redirect to dashboard
     router.push('/');
   };
 
@@ -183,7 +181,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground">
             <p>Kredensial Default:</p>
-            <p className="font-mono">Username: admin | Password: 123456</p>
+            <p className="font-mono">Username: admin | Password: 12345678</p>
           </div>
         </CardContent>
       </Card>
