@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for handling teleconsultation chatbot conversations,
@@ -113,28 +114,6 @@ export async function teleconsultChatbot(input: TeleconsultChatbotInput): Promis
   return teleconsultChatbotFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'teleconsultChatbotPrompt',
-  input: { schema: TeleconsultChatbotInputSchema },
-  output: { schema: TeleconsultChatbotOutputSchema },
-  tools: [getScreeningQuestions, saveScreeningAnswers],
-  prompt: `Anda adalah AI asisten medis yang cerdas dan proaktif. Anda membantu dokter (pengguna) selama sesi telekonsultasi dengan pasien bernama {{{patientName}}}.
-
-Tugas Anda adalah:
-1.  **Mulai Percakapan**: Awali dengan menyapa dokter dan tanyakan apa yang bisa Anda bantu terkait pasien {{{patientName}}} yang berusia ${getAge('{{{patientDob}}}')} tahun.
-2.  **Tawarkan Bantuan Skrining**: Secara proaktif, tawarkan bantuan untuk melakukan skrining kesehatan. Contoh: "Dok, pasien berusia ${getAge('{{{patientDob}}}')} tahun. Apakah ada skrining kesehatan yang ingin kita lakukan hari ini? Seperti skrining hipertensi, diabetes, atau lainnya?"
-3.  **Lakukan Skrining**: Jika dokter setuju dan menyebutkan nama skrining, gunakan tool \`getScreeningQuestions\` untuk mendapatkan daftar pertanyaannya. Ajukan pertanyaan satu per satu kepada dokter (yang akan meneruskannya ke pasien).
-4.  **Simpan Hasil**: Setelah semua pertanyaan terjawab, konfirmasi jawaban dengan dokter, lalu gunakan tool \`saveScreeningAnswers\` untuk menyimpan hasilnya ke rekam medis pasien. Beri tahu dokter bahwa hasilnya telah disimpan.
-5.  **Responsif**: Jawab pertanyaan atau perintah lain dari dokter secara singkat, jelas, dan profesional dalam Bahasa Indonesia.
-
-Riwayat Percakapan:
-{{#each history}}
-  {{#if (eq role 'user')}}Dokter: {{{content}}}{{/if}}
-  {{#if (eq role 'model')}}Asisten AI: {{{content}}}{{/if}}
-{{/each}}
-
-Hasilkan respons Anda selanjutnya sebagai Asisten AI.`,
-});
 
 const teleconsultChatbotFlow = ai.defineFlow(
   {
@@ -143,30 +122,36 @@ const teleconsultChatbotFlow = ai.defineFlow(
     outputSchema: TeleconsultChatbotOutputSchema,
   },
   async (input) => {
-    const { history, ...rest } = input;
     const patientAge = getAge(input.patientDob);
+    
+    // Convert Genkit-style history to Gemini-style history
+    const history = input.history.map(h => ({
+        role: h.role === 'model' ? 'model' : 'user', // Treat tool responses as user role for Gemini history
+        parts: [{ text: h.content }],
+    }));
 
-    const llmHistory = history.map(h => {
-        // Adapt role for the LLM prompt. 'user' is the doctor, 'model' is the AI assistant.
-        const role = h.role === 'user' ? 'user' : 'model';
-        return { role, content: [{ text: h.content }] };
-    });
-
-    const llmResponse = await ai.generate({
+    const result = await ai.generate({
         model: 'googleai/gemini-pro',
-        prompt: { ...rest, history: llmHistory },
         tools: [getScreeningQuestions, saveScreeningAnswers],
+        history: history,
+        prompt: `Anda adalah AI asisten medis yang cerdas dan proaktif. Anda membantu dokter (pengguna) selama sesi telekonsultasi dengan pasien bernama ${
+            input.patientName
+        }.
+        
+        Usia Pasien: ${patientAge} tahun.
+        ID Pasien: ${input.patientId}
+        
+        Tugas Anda:
+        1.  **Awali Percakapan**: Jika histori kosong, sapa dokter, sebutkan nama dan usia pasien, lalu tanyakan apa yang bisa Anda bantu.
+        2.  **Tawarkan Bantuan Skrining**: Secara proaktif, tawarkan bantuan untuk melakukan skrining kesehatan yang relevan dengan usia pasien. Contoh: "Dok, karena pasien berusia ${patientAge} tahun, apakah ada skrining kesehatan yang ingin kita lakukan, seperti skrining hipertensi atau diabetes?"
+        3.  **Gunakan Tools**: Jika dokter meminta untuk melakukan skrining, gunakan tool \`getScreeningQuestions\` untuk mendapatkan pertanyaannya. Setelah mendapatkan pertanyaan, ajukan satu per satu kepada dokter. Setelah jawaban terkumpul, gunakan tool \`saveScreeningAnswers\` untuk menyimpannya. Pastikan Anda menyertakan patientId yang benar saat menyimpan.
+        4.  **Responsif**: Jawab semua pertanyaan dan perintah dokter secara singkat dan profesional dalam Bahasa Indonesia.
+        `,
         config: {
-            temperature: 0.3, // Lower temperature for more predictable, professional responses
+        temperature: 0.3,
         },
     });
 
-    const output = llmResponse.output();
-    if (output?.content) {
-        return { response: output.content.map(p => p.text || '').join('') };
-    }
-    
-    // Handle potential tool calls if no direct text response
-    return { response: "Maaf, bisa diulangi lagi?" };
+    return { response: result.text };
   }
 );
