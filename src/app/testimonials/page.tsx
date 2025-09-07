@@ -1,12 +1,17 @@
 'use client'
 
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTestimonials } from "@/lib/data";
 import { Testimonial } from "@/lib/types";
-import { Star, StarHalf, MessageSquareQuote } from "lucide-react";
+import { Star, StarHalf, MessageSquareQuote, Bot, Loader2, ThumbsUp, ThumbsDown, Meh } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { runAnalyzeTestimonialSentiment, type AnalyzeTestimonialSentimentOutput } from "@/app/actions";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function Rating({ rating }: { rating: number }) {
     const fullStars = Math.floor(rating);
@@ -22,7 +27,45 @@ function Rating({ rating }: { rating: number }) {
     )
 }
 
+function SentimentDisplay({ sentiment }: { sentiment: AnalyzeTestimonialSentimentOutput['sentiment'] }) {
+    const sentimentConfig = {
+        Positif: { icon: ThumbsUp, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Positif' },
+        Negatif: { icon: ThumbsDown, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Negatif' },
+        Netral: { icon: Meh, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'Netral' },
+    };
+
+    const config = sentimentConfig[sentiment];
+    const Icon = config.icon;
+
+    return (
+        <Badge variant="outline" className={cn("gap-1.5 pl-1.5", config.bg, config.color)}>
+            <Icon className="h-3.5 w-3.5" />
+            {config.label}
+        </Badge>
+    );
+}
+
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
+    const { toast } = useToast();
+    const [analysis, setAnalysis] = useState<AnalyzeTestimonialSentimentOutput | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleAnalyze = async () => {
+        setIsLoading(true);
+        const result = await runAnalyzeTestimonialSentiment({ testimonialText: testimonial.feedback });
+        if (result.success && result.data) {
+            setAnalysis(result.data);
+        } else {
+            toast({
+                title: "Analisis Gagal",
+                description: result.error,
+                variant: 'destructive',
+            });
+        }
+        setIsLoading(false);
+    }
+
+
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
@@ -36,7 +79,27 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
             </CardHeader>
             <CardContent className="flex-grow">
                  <p className="italic text-muted-foreground">"{testimonial.feedback}"</p>
+                 {analysis && (
+                    <Alert className={cn("mt-4 animate-in fade-in-50",
+                        analysis.sentiment === 'Positif' && 'border-green-500/50',
+                        analysis.sentiment === 'Negatif' && 'border-red-500/50',
+                        analysis.sentiment === 'Netral' && 'border-yellow-500/50'
+                    )}>
+                        <div className="flex items-start gap-2">
+                             <SentimentDisplay sentiment={analysis.sentiment} />
+                        </div>
+                        <AlertDescription className="mt-2 text-foreground">
+                           <strong>Ringkasan AI:</strong> {analysis.summary}
+                        </AlertDescription>
+                    </Alert>
+                 )}
             </CardContent>
+            <CardFooter>
+                 <Button onClick={handleAnalyze} disabled={isLoading} variant="outline" size="sm" className="w-full">
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                    {isLoading ? 'Menganalisis...' : 'Analisis Sentimen'}
+                </Button>
+            </CardFooter>
         </Card>
     )
 }

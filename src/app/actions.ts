@@ -36,6 +36,11 @@ import {
     type SendToSatuSehatInput,
     type SendToSatuSehatOutput,
 } from '@/ai/flows/satusehat-integration-flow';
+import { 
+    analyzeTestimonialSentiment, 
+    type AnalyzeTestimonialSentimentInput, 
+    type AnalyzeTestimonialSentimentOutput 
+} from '@/ai/flows/analyze-testimonial-sentiment';
 import { deletePatient as dbDeletePatient, updatePatient as dbUpdatePatient } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 
@@ -185,4 +190,21 @@ export async function runSendToSatuSehat(input: SendToSatuSehatInput): Promise<{
         console.error('Error sending to SATU SEHAT:', error);
         return { success: false, error: error.message || 'Gagal mengirim data ke SATU SEHAT.' };
     }
+}
+
+export type { AnalyzeTestimonialSentimentOutput };
+export async function runAnalyzeTestimonialSentiment(
+  input: AnalyzeTestimonialSentimentInput
+): Promise<{
+  success: boolean;
+  data?: AnalyzeTestimonialSentimentOutput;
+  error?: string;
+}> {
+  try {
+    const result = await analyzeTestimonialSentiment(input);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Error running sentiment analysis:', error);
+    return { success: false, error: error.message || 'Gagal menganalisis sentimen.' };
+  }
 }
