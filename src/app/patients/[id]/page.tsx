@@ -463,7 +463,7 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
                       <DiagnosisForm patient={patient} />
                   </TabsContent>
                   <TabsContent value="therapy" className="mt-6">
-                      <TherapyForm />
+                      <TherapyForm patient={patient} />
                   </TabsContent>
               </Tabs>
           </CardContent>

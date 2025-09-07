@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   FormControl,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Save, Trash2, Bot, Loader2, BedDouble } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Bot, Loader2, BedDouble, Download } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -26,8 +26,11 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Switch } from './ui/switch';
+import Papa from 'papaparse';
+import type { Patient } from '@/lib/types';
 
-export function TherapyForm() {
+
+export function TherapyForm({ patient }: { patient: Patient }) {
   const { control, getValues, watch } = useFormContext();
   const { toast } = useToast();
 
@@ -41,6 +44,89 @@ export function TherapyForm() {
   });
 
   const isAdmitted = watch('inpatientCare.isAdmitted');
+
+  const handleDownload = () => {
+    const data = getValues();
+
+    const formattedData = {
+        'Nama Pasien': patient.name,
+        'Nomor Rekam Medis': patient.medicalRecordNumber,
+        'Tanggal Lahir': patient.dateOfBirth,
+        '--- ANAMNESIS ---': '',
+        'Keluhan Utama': data.mainComplaint,
+        'Riwayat Penyakit Sekarang': data.presentIllness,
+        'Riwayat Penyakit Dahulu': data.pastMedicalHistory,
+        'Riwayat Alergi Obat': data.drugAllergy,
+        '--- PEMERIKSAAN FISIK ---': '',
+        'Kesadaran': data.consciousness,
+        'Tekanan Darah (mmHg)': data.bloodPressure,
+        'Nadi (x/menit)': data.heartRate,
+        'Pernapasan (x/menit)': data.respiratoryRate,
+        'Suhu (C)': data.temperature,
+        'Saturasi Oksigen (%)': data.oxygenSaturation,
+        'Mata': data.eyes,
+        'Hidung': data.nose,
+        'Mulut': data.mouth,
+        'Jantung (Inspeksi)': data.heartInspection,
+        'Jantung (Palpasi)': data.heartPalpation,
+        'Jantung (Perkusi)': data.heartPercussion,
+        'Jantung (Auskultasi)': data.heartAuscultation,
+        'Paru (Inspeksi)': data.lungsInspection,
+        'Paru (Palpasi)': data.lungsPalpation,
+        'Paru (Perkusi)': data.lungsPercussion,
+        'Paru (Auskultasi)': data.lungsAuscultation,
+        'Abdomen (Inspeksi)': data.abdomenInspection,
+        'Abdomen (Auskultasi)': data.abdomenAuscultation,
+        'Abdomen (Perkusi)': data.abdomenPercussion,
+        'Abdomen (Palpasi)': data.abdomenPalpation,
+        'Ekstremitas': data.extremities,
+        'Neurologis': data.neurological,
+        '--- PEMERIKSAAN PENUNJANG ---': '',
+        'Darah Lengkap': data.completeBloodCount,
+        'Urinalisa': data.urinalysis,
+        'Kimia Darah': data.bloodChemistry,
+        'Mikroskopis': data.microscopic,
+        'Imunologi': data.immunology,
+        'X-Ray': data.xray,
+        'CT Scan': data.ctScan,
+        'MRI': data.mri,
+        'USG': data.ultrasound,
+        'PET Scan': data.petScan,
+        'EKG': data.ekg,
+        'EEG': data.eeg,
+        'EMG': data.emg,
+        '--- DIAGNOSIS & RENCANA ---': '',
+        'Diagnosis': data.diagnoses.map((d: any) => d.value).join('; '),
+        'Prognosis': data.prognosis,
+        'Edukasi Pasien': data.patientEducation,
+        'Dirujuk': data.referral?.isReferred ? 'Ya' : 'Tidak',
+        'Fasilitas Rujukan': data.referral?.facility,
+        'Alasan Rujukan': data.referral?.reason,
+        '--- TERAPI ---': '',
+        'Resep Obat': data.prescriptions.map((p: any) => `${p.drugName} ${p.preparation} ${p.dose} (Jumlah: ${p.quantity})`).join('; '),
+        'Tindakan Medis': data.actions,
+        'Rawat Inap': data.inpatientCare?.isAdmitted ? 'Ya' : 'Tidak',
+        'Instruksi Rawat Inap': data.inpatientCare?.instructions
+    };
+    
+    // Convert object to an array of {field, value} for papaparse
+    const csvData = Object.entries(formattedData).map(([field, value]) => ({ field, value }));
+    const csv = Papa.unparse(csvData, { header: true });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `rekam_medis_${patient.name.replace(/ /g, '_')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+  };
+
 
   const handleSaveAndSummarize = async () => {
     setIsProcessing(true);
@@ -214,11 +300,15 @@ export function TherapyForm() {
             </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t mt-8">
-          <Button type="button" onClick={handleSaveAndSummarize} disabled={isProcessing}>
-            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-            {isProcessing ? 'Memproses...' : 'Simpan Pemeriksaan & Buat Resume'}
-          </Button>
+        <div className="flex justify-end gap-4 pt-4 border-t mt-8">
+            <Button type="button" variant="outline" onClick={handleDownload}>
+                <Download className="mr-2 h-4 w-4" />
+                Unduh CSV
+            </Button>
+            <Button type="button" onClick={handleSaveAndSummarize} disabled={isProcessing}>
+                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                {isProcessing ? 'Memproses...' : 'Simpan Pemeriksaan & Buat Resume'}
+            </Button>
         </div>
 
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
