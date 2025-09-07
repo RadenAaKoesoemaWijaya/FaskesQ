@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   FormControl,
@@ -140,7 +140,7 @@ export function TherapyForm({ patient }: { patient: Patient }) {
             anamnesis: `Keluhan Utama: ${formData.mainComplaint}. Riwayat Sekarang: ${formData.presentIllness}. Riwayat Dahulu: ${formData.pastMedicalHistory}. Alergi: ${formData.drugAllergy}.`,
             physicalExamination: `Kesadaran: ${formData.consciousness}, TD: ${formData.bloodPressure}, Nadi: ${formData.heartRate}, RR: ${formData.respiratoryRate}, Suhu: ${formData.temperature}.`,
             supportingExaminations: "Hasil penunjang terlampir jika ada.",
-            diagnosis: `Primer: ${formData.primaryDiagnosis}. Sekunder: ${formData.secondaryDiagnosis}`,
+            diagnosis: formData.diagnoses.map((d: {value: string}) => d.value).join(', '),
             prescriptionsAndActions: `Resep: ${prescriptions}. ${actions}`,
         };
         
