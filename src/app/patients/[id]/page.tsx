@@ -20,10 +20,10 @@ import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import type { Patient, ScreeningResult } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit, ShieldQuestion, Venus, Mars } from 'lucide-react';
+import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit, ShieldQuestion, Venus, Mars, Clock } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MedicalScribe } from '@/components/medical-scribe';
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -127,6 +127,62 @@ const formSchema = z.object({
     instructions: z.string().optional(),
   }).optional(),
 });
+
+function ServiceTimer({ patientId }: { patientId: string }) {
+  const [elapsedTime, setElapsedTime] = useState('00:00');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const storageKey = `serviceStartTime-${patientId}`;
+    if (typeof window === 'undefined') return;
+
+    let startTime = localStorage.getItem(storageKey);
+
+    if (!startTime) {
+      startTime = String(Date.now());
+      localStorage.setItem(storageKey, startTime);
+    }
+    
+    const start = parseInt(startTime, 10);
+
+    const updateTimer = () => {
+      // If the key is removed, the service is considered complete.
+      if (!localStorage.getItem(storageKey)) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setElapsedTime('Selesai');
+        return;
+      }
+      const now = Date.now();
+      const elapsed = Math.floor((now - start) / 1000);
+      const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const seconds = String(elapsed % 60).padStart(2, '0');
+      setElapsedTime(`${minutes}:${seconds}`);
+    };
+    
+    updateTimer();
+    intervalRef.current = setInterval(updateTimer, 1000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [patientId]);
+  
+  if (typeof window !== 'undefined' && !localStorage.getItem(`serviceStartTime-${patientId}`)) {
+    return (
+       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">
+          <Clock className="h-4 w-4 text-green-500" />
+          <span>Pelayanan Selesai</span>
+        </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">
+      <Clock className="h-4 w-4 animate-pulse" />
+      <span>Waktu Pelayanan: {elapsedTime}</span>
+    </div>
+  );
+}
 
 
 function PatientProfile({ patient }: { patient: Patient }) {
@@ -510,6 +566,7 @@ function PatientDetailPageContent({ id }: { id: string }) {
     <div className="animate-in fade-in-50">
       <PageHeader title={patient.name}>
         <div className="flex items-center gap-4">
+          <ServiceTimer patientId={patient.id} />
           <Avatar className="h-16 w-16">
             <AvatarFallback className="bg-primary/10 text-primary">
               <GenderIcon className="h-8 w-8" />

@@ -148,9 +148,24 @@ export function TherapyForm({ patient }: { patient: Patient }) {
         if(result.success && result.data) {
             setMedicalResume(result.data.medicalResume);
             setIsModalOpen(true);
+
+            // Timer logic
+            const storageKey = `serviceStartTime-${patient.id}`;
+            const startTime = localStorage.getItem(storageKey);
+            let toastDescription = 'Data pemeriksaan berhasil disimpan dan ringkasan dibuat.';
+
+            if (startTime) {
+                const elapsed = Math.floor((Date.now() - parseInt(startTime, 10)) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                toastDescription += ` Total waktu pelayanan: ${minutes} menit ${seconds} detik.`;
+                localStorage.removeItem(storageKey);
+            }
+            
             toast({
                 title: 'Pemeriksaan Disimpan',
-                description: 'Data pemeriksaan lengkap berhasil disimpan dan ringkasan dibuat.',
+                description: toastDescription,
+                duration: 9000,
             });
         } else {
             throw new Error(result.error || "Gagal membuat resume medis.");
