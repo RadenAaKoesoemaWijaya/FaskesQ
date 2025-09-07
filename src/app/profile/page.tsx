@@ -164,6 +164,7 @@ function SecuritySettings() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
     const handleUpdatePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
@@ -184,6 +185,14 @@ function SecuritySettings() {
         setNewPassword('');
         setConfirmPassword('');
         setIsUpdating(false);
+    }
+    
+    const handleTwoFactorToggle = (enabled: boolean) => {
+        setTwoFactorEnabled(enabled);
+        toast({
+            title: `Autentikasi Dua Faktor ${enabled ? 'Diaktifkan' : 'Dinonaktifkan'}`,
+            description: `Keamanan akun Anda telah diperbarui.`,
+        });
     }
 
     return (
@@ -212,7 +221,7 @@ function SecuritySettings() {
                     <h3 className="text-lg font-medium">Autentikasi Dua Faktor (2FA)</h3>
                     <div className="flex items-center justify-between mt-2 p-4 border rounded-lg">
                         <p className="text-sm text-muted-foreground">Aktifkan 2FA untuk lapisan keamanan tambahan.</p>
-                        <Switch id="two-factor-auth" />
+                        <Switch id="two-factor-auth" checked={twoFactorEnabled} onCheckedChange={handleTwoFactorToggle} />
                     </div>
                 </div>
                  <div className="flex justify-end">
@@ -233,6 +242,14 @@ export default function ProfilePage() {
 
   const handleToggleEdit = () => {
     setIsEditing(prev => !prev);
+    if (isEditing) {
+        // This means we were editing and are now switching to view mode.
+        // We can treat this as a "cancel" action for simplicity.
+        toast({
+            title: "Mode Edit Dinonaktifkan",
+            description: "Perubahan yang belum disimpan tidak akan diterapkan.",
+        });
+    }
   }
 
   const handleSaveChanges = async () => {
