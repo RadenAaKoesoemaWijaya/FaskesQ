@@ -63,6 +63,13 @@ const MedicalScribeOutputSchema = z.object({
       eeg: z.string().describe("Interpretation results of the electroencephalogram (EEG)."),
       emg: z.string().describe("Interpretation results of the electromyogram (EMG)."),
   }).describe("Results from supporting examinations, if mentioned in the transcript."),
+  
+  assessment: z.object({
+    workingDiagnosis: z.string().describe("The primary or working diagnosis mentioned by the doctor."),
+    differentialDiagnosis: z.array(z.string()).describe("A list of differential diagnoses mentioned by the doctor."),
+    summary: z.string().describe("A brief clinical summary of the patient's condition based on all available information."),
+  }).describe("The clinical assessment, including diagnosis and summary."),
+
   requests: z.object({
       lab: z.object({
           completeBloodCount: z.boolean().describe("Check if a complete blood count is requested."),
@@ -112,16 +119,17 @@ const prompt = ai.definePrompt({
 
   PERATURAN PENTING:
   1.  **Fokus pada Fakta**: Ekstrak HANYA informasi yang secara eksplisit disebutkan dalam transkrip.
-  2.  **Jangan Berasumsi**: Jika sebuah informasi tidak ada (misal: riwayat penyakit keluarga), biarkan kolomnya sebagai string kosong (""). Untuk permintaan pemeriksaan (kolom boolean), isikan \`false\`.
+  2.  **Jangan Berasumsi**: Jika sebuah informasi tidak ada (misal: riwayat penyakit keluarga), biarkan kolomnya sebagai string kosong ("") atau array kosong ([]). Untuk permintaan pemeriksaan (kolom boolean), isikan \`false\`.
   3.  **Terminologi Medis**: Gunakan terminologi medis yang tepat jika memungkinkan. Contoh: ubah "gula darah" menjadi "glukosa darah", "sesak napas" menjadi "dispnea".
-  4.  **Lengkapi Semua Kolom**: Pastikan untuk mengisi semua bagian dari struktur JSON yang diminta, dari Anamnesis hingga Rencana, meskipun beberapa di antaranya kosong.
+  4.  **Lengkapi Semua Kolom**: Pastikan untuk mengisi semua bagian dari struktur JSON yang diminta, meskipun beberapa di antaranya kosong.
 
   PROSES KERJA:
   Analisis transkrip berikut dengan saksama. Identifikasi dan ekstrak informasi untuk setiap bagian:
   - Anamnesis (keluhan utama, riwayat penyakit, alergi).
   - Pemeriksaan Fisik (tanda vital, pemeriksaan head-to-toe).
   - Hasil Pemeriksaan Penunjang (jika dokter membacakan hasil lab atau rontgen).
-  - Permintaan Pemeriksaan Penunjang: Jika dokter meminta pemeriksaan (cth: "Tolong cek darah lengkap", "Minta Rontgen thorax"), set nilai boolean yang sesuai menjadi \`true\`. Catat indikasi atau alasan permintaan di kolom \`notes\`.
+  - Penilaian (Assessment): Buat ringkasan klinis singkat berdasarkan semua temuan. Jika dokter menyebutkan diagnosis kerja atau diagnosis banding, catat di kolom yang sesuai.
+  - Permintaan Pemeriksaan Penunjang: Jika dokter meminta pemeriksaan (cth: "Tolong cek darah lengkap"), set nilai boolean yang sesuai menjadi \`true\`. Catat indikasi di kolom \`notes\`.
   - Rencana (prognosis, edukasi, resep, tindakan).
 
   Transkrip:
@@ -150,12 +158,8 @@ const medicalScribeFlow = ai.defineFlow(
       return output;
     } catch (error) {
       console.error('Error in medicalScribeFlow:', error);
-      // Depending on the desired behavior, you could:
-      // 1. Throw the error to let the caller handle it.
-      // 2. Return a default/error state object.
-      // 3. Implement a retry mechanism.
-      // For now, we'll re-throw to make the failure explicit.
-      throw new Error(`Failed to process transcript due to an AI generation or validation error: ${error.message}`);
+      // Re-throw with a more user-friendly message that will be caught by the server action.
+      throw new Error('Gagal memproses transkrip. Model AI mungkin memberikan respons yang tidak valid. Silakan coba lagi atau periksa kembali transkrip Anda.');
     }
   }
 );

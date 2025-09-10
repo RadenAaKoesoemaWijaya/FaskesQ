@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow for handling teleconsultation chatbot conversations,
@@ -46,6 +45,8 @@ const getScreeningQuestions = ai.defineTool(
     const relevantCluster = clusters.find(c => c.name.toLowerCase() === chosenScreeningName.toLowerCase());
 
     if (!relevantCluster) {
+      // Return an empty list if no matching screening is found.
+      // The AI prompt is configured to handle this case gracefully.
       return { screeningName: '', questions: [] };
     }
 
@@ -128,41 +129,55 @@ const teleconsultChatbotFlow = ai.defineFlow(
     
     // Convert Genkit-style history to Gemini-style history
     const history = input.history.map(h => ({
-        role: h.role,
+        role: h.role as 'user' | 'model', // Cast to expected role type
         parts: [{ text: h.content }],
     }));
 
-    const result = await ai.generate({
-        model: 'googleai/gemini-pro',
-        tools: [getScreeningQuestions, saveScreeningAnswers],
-        history: history,
-        prompt: `Anda adalah AI asisten medis yang cerdas dan proaktif. Anda membantu dokter (pengguna) selama sesi telekonsultasi dengan pasien bernama ${
-            input.patientName
-        }.
-        
-        Usia Pasien: ${patientAge} tahun.
-        ID Pasien: ${input.patientId}
-        
-        Tugas Anda:
-        1.  **Awali Percakapan**: Jika histori kosong, sapa dokter, sebutkan nama dan usia pasien, lalu tanyakan apa yang bisa Anda bantu.
-        2.  **Tawarkan Bantuan Skrining**: Secara proaktif, tawarkan bantuan untuk melakukan skrining kesehatan yang relevan dengan usia pasien. Contoh: "Dok, karena pasien berusia ${patientAge} tahun, apakah ada skrining kesehatan yang ingin kita lakukan, seperti skrining hipertensi atau diabetes?"
-        3.  **Gunakan Tools**: Jika dokter meminta untuk melakukan skrining, gunakan tool \`getScreeningQuestions\` untuk mendapatkan pertanyaannya. Setelah mendapatkan pertanyaan, ajukan satu per satu kepada dokter. Setelah jawaban terkumpul, gunakan tool \`saveScreeningAnswers\` untuk menyimpannya. Pastikan Anda menyertakan patientId yang benar saat menyimpan.
-        4.  **Responsif**: Jawab semua pertanyaan dan perintah dokter secara singkat dan profesional dalam Bahasa Indonesia.
-        `,
-        config: {
-        temperature: 0.3,
-        },
-    });
+    try {
+      const result = await ai.generate({
+          model: 'googleai/gemini-pro',
+          tools: [getScreeningQuestions, saveScreeningAnswers],
+          history: history,
+          prompt: `Anda adalah AI asisten medis yang cerdas dan proaktif. Anda membantu dokter (pengguna) selama sesi telekonsultasi dengan pasien bernama ${
+              input.patientName
+          }.
+          
+          Usia Pasien: ${patientAge} tahun.
+          ID Pasien: ${input.patientId}
+          
+          ATURAN PENTING:
+          -   Selalu gunakan Bahasa Indonesia yang singkat, profesional, dan jelas.
+          -   Jika Anda menggunakan tool \`getScreeningQuestions\` dan hasilnya adalah daftar pertanyaan kosong, informasikan kepada dokter bahwa skrining yang diminta tidak ditemukan dan tanyakan apakah ada hal lain yang bisa dibantu.
+          
+          Tugas Anda:
+          1.  **Awali Percakapan**: Jika histori kosong, sapa dokter, sebutkan nama dan usia pasien, lalu tanyakan apa yang bisa Anda bantu.
+          2.  **Tawarkan Bantuan Skrining**: Secara proaktif, tawarkan bantuan untuk melakukan skrining kesehatan yang relevan dengan usia pasien. Contoh: "Dok, karena pasien berusia ${patientAge} tahun, apakah ada skrining kesehatan yang ingin kita lakukan, seperti skrining hipertensi atau diabetes?"
+          3.  **Gunakan Tools**: Jika dokter meminta skrining, gunakan tool \`getScreeningQuestions\`. Setelah mendapat pertanyaan, ajukan ke dokter. Setelah jawaban terkumpul, gunakan \`saveScreeningAnswers\` untuk menyimpan. Pastikan Anda menyertakan \`patientId\` yang benar.
+          4.  **Responsif**: Jawab semua pertanyaan dan perintah dokter lainnya.
+          `,
+          config: {
+          temperature: 0.3,
+          },
+      });
 
-    const outputHistory = result.history();
-    const lastResponse = outputHistory[outputHistory.length - 1];
+      // Use the recommended result.text() to get the final textual response.
+      const responseText = result.text();
 
-    // Convert the last response back to the simple ChatMessage format
-    const responseMessage: ChatMessage = {
-      role: lastResponse.role,
-      content: lastResponse.parts[0].text || '',
-    };
-    
-    return { history: [...input.history, responseMessage] };
+      const responseMessage: ChatMessage = {
+        role: 'model',
+        content: responseText,
+      };
+      
+      return { history: [...input.history, responseMessage] };
+
+    } catch (error) {
+      console.error("[teleconsultChatbotFlow] Error during AI generation:", error);
+      // Create a user-friendly error message to return to the UI
+      const errorMessage: ChatMessage = {
+        role: 'model',
+        content: 'Maaf, terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi.',
+      };
+      return { history: [...input.history, errorMessage] };
+    }
   }
 );
