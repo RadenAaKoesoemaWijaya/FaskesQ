@@ -18,7 +18,6 @@ import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { MedicalScribe } from '@/components/medical-scribe';
-import { PatientRegistrationForm } from '@/components/patient-registration-form';
 
 // UI imports
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -143,7 +142,40 @@ function PatientProfile({ patient }: { patient: Patient }) {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-            {/* Content for patient profile */}
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="font-medium text-muted-foreground">Nama Lengkap</p>
+                <p>{patient.name}</p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">No. Rekam Medis</p>
+                <p>{patient.medicalRecordNumber}</p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Tanggal Lahir</p>
+                <p>
+                  {patient.dateOfBirth} ({getAge(patient.dateOfBirth)} tahun)
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Jenis Kelamin</p>
+                <p>
+                  <Badge variant="secondary">{patient.gender}</Badge>
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Kontak</p>
+                <p>{patient.contact}</p>
+              </div>
+               <div>
+                <p className="font-medium text-muted-foreground">Metode Pembayaran</p>
+                <p>{patient.paymentMethod} {patient.insuranceNumber && `(${patient.insuranceNumber})`}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="font-medium text-muted-foreground">Alamat</p>
+                <p>{patient.address}</p>
+              </div>
+            </div>
         </CardContent>
       </Card>
     );
@@ -208,13 +240,13 @@ function PatientDetailPageContent({ id }: { id: string }) {
         <TabsContent value="profile" className="mt-6">
           <PatientProfile patient={patient} />
         </TabsContent>
-        {/* Other TabsContent would be here */}
+        {/* Add other TabsContent components here as needed */}
       </Tabs>
     </div>
   );
 }
 
-// FINAL FIX: Use React.use() to unwrap the params promise
+
 const PatientDetailPage = ({ params }: { params: { id: string } }) => {
   const unwrappedParams = use(params);
   const { id } = unwrappedParams;
