@@ -1,10 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-        // Izinkan permintaan cross-origin dari lingkungan pengembangan Cloud Workstations.
-        // Ini diperlukan agar Genkit UI dan fitur Next.js lainnya berfungsi dengan baik.
-        allowedDevOrigins: ["*.cloudworkstations.dev"],
-    }
+    // Opsi konfigurasi Next.js Anda ditempatkan di sini.
+    // Peringatan 'allowedDevOrigins' telah diatasi dengan menghapus 
+    // blok 'experimental' yang tidak diperlukan untuk build produksi.
 };
 
 export default nextConfig;

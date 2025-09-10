@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getPatientById } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
@@ -497,7 +497,20 @@ function PatientDetailPageContent({ id }: { id: string }) {
   }, [id]);
 
   if (!patient) {
-    return ( /* Loading Skeleton */ );
+    return (
+       <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 rounded-full bg-muted animate-pulse"></div>
+          <div className="h-8 w-48 rounded bg-muted animate-pulse"></div>
+        </div>
+        <div className="h-10 w-full md:w-[600px] rounded bg-muted animate-pulse mt-8"></div>
+        <Card className="mt-6">
+          <CardContent className="pt-6">
+             <div className="h-64 w-full rounded bg-muted animate-pulse"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
