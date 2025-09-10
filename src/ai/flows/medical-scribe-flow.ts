@@ -108,21 +108,26 @@ const prompt = ai.definePrompt({
   name: 'medicalScribePrompt',
   input: {schema: MedicalScribeInputSchema},
   output: {schema: MedicalScribeOutputSchema},
-  prompt: `Anda adalah AI ahli pencatat medis (medical scribe). Tugas Anda adalah mendengarkan percakapan antara dokter dan pasien, lalu mengisi rekam medis secara akurat berdasarkan informasi dalam transkrip. Gunakan Bahasa Indonesia yang baik dan benar.
+  prompt: `Anda adalah AI ahli pencatat medis (medical scribe) yang sangat teliti dan akurat. Tugas Anda adalah mengubah transkrip percakapan dokter-pasien menjadi rekam medis terstruktur dalam format JSON. Gunakan Bahasa Indonesia formal sesuai standar medis.
 
-  Analisis transkrip berikut dengan saksama dan ekstrak informasi yang diperlukan. Perhatikan detail yang disebutkan oleh pasien dan dokter. Ini mencakup:
-  1. Anamnesis (keluhan utama, riwayat penyakit sekarang, riwayat dahulu, alergi).
-  2. Pemeriksaan fisik lengkap (tanda vital, pemeriksaan head-to-toe).
-  3. Hasil pemeriksaan penunjang (laboratorium, radiologi, dan tes lain) jika dibicarakan.
-  4. Permintaan pemeriksaan penunjang. Jika dokter meminta pemeriksaan (cth: "Tolong cek darah lengkap", "Minta Rontgen thorax"), tandai (centang) permintaan yang sesuai di dalam output. Jika dokter memberikan alasan (cth: "...dengan indikasi demam"), catat alasan tersebut di kolom 'notes'.
-  5. Penilaian dan rencana, termasuk prognosis, edukasi pasien, resep obat, dan tindakan lainnya.
+  PERATURAN PENTING:
+  1.  **Fokus pada Fakta**: Ekstrak HANYA informasi yang secara eksplisit disebutkan dalam transkrip.
+  2.  **Jangan Berasumsi**: Jika sebuah informasi tidak ada (misal: riwayat penyakit keluarga), biarkan kolomnya sebagai string kosong (""). Untuk permintaan pemeriksaan (kolom boolean), isikan \`false\`.
+  3.  **Terminologi Medis**: Gunakan terminologi medis yang tepat jika memungkinkan. Contoh: ubah "gula darah" menjadi "glukosa darah", "sesak napas" menjadi "dispnea".
+  4.  **Lengkapi Semua Kolom**: Pastikan untuk mengisi semua bagian dari struktur JSON yang diminta, dari Anamnesis hingga Rencana, meskipun beberapa di antaranya kosong.
 
-  Jika ada informasi yang tidak disebutkan dalam transkrip, biarkan kolom yang bersangkutan kosong atau bernilai false untuk permintaan pemeriksaan. Pastikan semua output dalam Bahasa Indonesia yang formal dan sesuai standar medis.
+  PROSES KERJA:
+  Analisis transkrip berikut dengan saksama. Identifikasi dan ekstrak informasi untuk setiap bagian:
+  - Anamnesis (keluhan utama, riwayat penyakit, alergi).
+  - Pemeriksaan Fisik (tanda vital, pemeriksaan head-to-toe).
+  - Hasil Pemeriksaan Penunjang (jika dokter membacakan hasil lab atau rontgen).
+  - Permintaan Pemeriksaan Penunjang: Jika dokter meminta pemeriksaan (cth: "Tolong cek darah lengkap", "Minta Rontgen thorax"), set nilai boolean yang sesuai menjadi \`true\`. Catat indikasi atau alasan permintaan di kolom \`notes\`.
+  - Rencana (prognosis, edukasi, resep, tindakan).
 
   Transkrip:
   {{{transcript}}}
 
-  Berdasarkan transkrip ini, harap isi anamnesis, pemeriksaan fisik lengkap, hasil pemeriksaan penunjang yang disebutkan, permintaan pemeriksaan, dan rencana perawatan lengkap.
+  Berdasarkan transkrip di atas, hasilkan rekam medis lengkap dalam format JSON yang valid sesuai skema yang telah ditentukan.
   `,
 });
 
@@ -131,9 +136,26 @@ const medicalScribeFlow = ai.defineFlow(
     name: 'medicalScribeFlow',
     inputSchema: MedicalScribeInputSchema,
     outputSchema: MedicalScribeOutputSchema,
+    // Optional: Add middleware for retries, logging, etc.
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    try {
+      const { output } = await prompt(input);
+      if (!output) {
+        // This case handles if the model returns nothing.
+        throw new Error('AI model returned no output.');
+      }
+      // The output is automatically validated against the outputSchema by Genkit.
+      // If it's invalid, Genkit will throw an error which will be caught by the catch block.
+      return output;
+    } catch (error) {
+      console.error('Error in medicalScribeFlow:', error);
+      // Depending on the desired behavior, you could:
+      // 1. Throw the error to let the caller handle it.
+      // 2. Return a default/error state object.
+      // 3. Implement a retry mechanism.
+      // For now, we'll re-throw to make the failure explicit.
+      throw new Error(`Failed to process transcript due to an AI generation or validation error: ${error.message}`);
+    }
   }
 );
