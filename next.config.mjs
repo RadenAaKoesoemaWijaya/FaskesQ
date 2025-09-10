@@ -16,7 +16,10 @@ const nextConfig = {
             },
         ],
     },
-    allowedDevOrigins: ['https://3000-firebase-faskesq-1757518626084.cluster-va5f6x3wzzh4stde63ddr3qgge.cloudworkstations.dev'],
+    allowedDevOrigins: [
+        'https://3000-firebase-faskesq-1757518626084.cluster-va5f6x3wzzh4stde63ddr3qgge.cloudworkstations.dev',
+        'http://3000-firebase-faskesq-1757518626084.cluster-va5f6x3wzzh4stde63ddr3qgge.cloudworkstations.dev'
+    ],
 };
 
 export default nextConfig;
