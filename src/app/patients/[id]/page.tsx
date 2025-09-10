@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import { use } from 'react';
 import { PatientAnamnesis } from '@/components/anamnesis-form';
 import { PatientDiagnosis } from '@/components/diagnosis-form';
 import { PageHeader } from '@/components/page-header';
@@ -9,8 +8,8 @@ import { PatientTherapy } from '@/components/therapy-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getPatientById } from '@/lib/data';
 
-function PatientDetailPageContent({ id }: { id: string }) {
-  const patient = use(getPatientById(id));
+async function PatientDetailPageContent({ id }: { id: string }) {
+  const patient = await getPatientById(id);
 
   if (!patient) {
     notFound();
@@ -51,7 +50,8 @@ function PatientDetailPageContent({ id }: { id: string }) {
   );
 }
 
-const PatientDetailPage = ({ params }: { params: { id: string } }) => {
+// Make the page component a server component
+const PatientDetailPage = async ({ params }: { params: { id: string } }) => {
   const { id } = params;
 
   if (!id) {
