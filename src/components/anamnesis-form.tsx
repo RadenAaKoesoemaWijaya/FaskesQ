@@ -1,11 +1,8 @@
 'use client';
 
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -13,37 +10,22 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, ShieldCheck, Loader2 } from 'lucide-react';
+import { Save, ShieldCheck } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { getScreeningClusters, getPatientById, saveExamination } from '@/lib/data';
-import { useEffect, useState, useTransition } from 'react';
-import type { ScreeningCluster, Examination } from '@/lib/types';
+import { getScreeningClusters } from '@/lib/data';
+import { useEffect, useState } from 'react';
+import type { ScreeningCluster, ScreeningQuestion } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
-import { useToast } from '@/hooks/use-toast';
-
-const anamnesisSchema = z.object({
-  main_complaint: z.string().min(1, "Keluhan utama wajib diisi."),
-  present_illness_history: z.string().optional(),
-  past_medical_history: z.string().optional(),
-  drug_allergy: z.string().optional(),
-  screening_answers: z.array(z.object({
-      question_id: z.string(),
-      question_text: z.string(),
-      answer: z.string(),
-  })).optional(),
-});
-
-type AnamnesisFormData = z.infer<typeof anamnesisSchema>;
 
 function AnamnesisScreening() {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
   const [clusters, setClusters] = useState<ScreeningCluster[]>([]);
   const [selectedCluster, setSelectedCluster] = useState<ScreeningCluster | null>(null);
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "screening_answers"
+    name: "screeningAnswers"
   });
 
   useEffect(() => {
@@ -57,12 +39,14 @@ function AnamnesisScreening() {
   const handleClusterChange = (clusterId: string) => {
     const cluster = clusters.find(c => c.id === clusterId) || null;
     setSelectedCluster(cluster);
-    remove(); 
+    // Clear previous answers
+    remove();
+    // Append new questions
     if (cluster) {
       cluster.questions.forEach(q => {
         append({
-          question_id: q.id,
-          question_text: q.text,
+          questionId: q.id,
+          questionText: q.text,
           answer: ''
         });
       });
@@ -96,10 +80,10 @@ function AnamnesisScreening() {
                     <FormField
                       key={field.id}
                       control={control}
-                      name={`screening_answers.${index}.answer`}
+                      name={`screeningAnswers.${index}.answer`}
                       render={({ field: answerField }) => (
                         <FormItem>
-                          <FormLabel>{(fields[index] as any).question_text}</FormLabel>
+                          <FormLabel>{(fields[index] as any).questionText}</FormLabel>
                            <FormControl>
                               <Input placeholder="Jawaban pasien..." {...answerField} />
                            </FormControl>
@@ -116,14 +100,14 @@ function AnamnesisScreening() {
   )
 }
 
-function AnamnesisFormFields() {
+export function AnamnesisForm() {
   const { control } = useFormContext();
 
   return (
     <div className="space-y-6">
       <FormField
         control={control}
-        name="main_complaint"
+        name="mainComplaint"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Keluhan Utama</FormLabel>
@@ -136,10 +120,10 @@ function AnamnesisFormFields() {
       />
       <FormField
         control={control}
-        name="present_illness_history"
+        name="presentIllness"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Riwayat Penyakit Sekarang</FormLabel>
+            <FormLabel>Keluhan Penyerta / Riwayat Penyakit Sekarang</FormLabel>
             <FormControl>
               <Textarea
                 placeholder="Jelaskan detail keluhan, kronologi, dan gejala penyerta lainnya..."
@@ -156,12 +140,12 @@ function AnamnesisFormFields() {
 
       <FormField
         control={control}
-        name="past_medical_history"
+        name="pastMedicalHistory"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Riwayat Penyakit Dahulu</FormLabel>
             <FormControl>
-              <Textarea placeholder="Contoh: Hipertensi terkontrol, Diabetes Melitus..." rows={3} {...field} />
+              <Textarea placeholder="Contoh: Hipertensi terkontrol, Diabetes Melitus sejak 5 tahun lalu..." rows={3} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -169,7 +153,7 @@ function AnamnesisFormFields() {
       />
       <FormField
         control={control}
-        name="drug_allergy"
+        name="drugAllergy"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Riwayat Alergi Obat</FormLabel>
@@ -181,84 +165,5 @@ function AnamnesisFormFields() {
         )}
       />
     </div>
-  );
-}
-
-export function PatientAnamnesis({ patientId }: { patientId: string }) {
-  const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-  const [examination, setExamination] = useState<Partial<Examination> | null>(null);
-
-  const form = useForm<AnamnesisFormData>({
-    resolver: zodResolver(anamnesisSchema),
-    defaultValues: {
-      main_complaint: '',
-      present_illness_history: '',
-      past_medical_history: '',
-      drug_allergy: '',
-      screening_answers: [],
-    },
-  });
-
-  useEffect(() => {
-    async function fetchLatestAnamnesis() {
-      const patient = await getPatientById(patientId);
-      const latestExam = patient?.history?.find(h => h.type === 'anamnesis');
-      if (latestExam) {
-        setExamination(latestExam);
-        form.reset({
-          main_complaint: latestExam.main_complaint || '',
-          present_illness_history: latestExam.present_illness_history || '',
-          past_medical_history: latestExam.past_medical_history || '',
-          drug_allergy: latestExam.drug_allergy || '',
-          screening_answers: [], // Note: screening is handled separately for now
-        });
-      }
-    }
-    fetchLatestAnamnesis();
-  }, [patientId, form]);
-
-  const onSubmit = (data: AnamnesisFormData) => {
-    startTransition(async () => {
-      try {
-        await saveExamination(patientId, {
-          ...examination, // original data
-          ...data,       // new data from form
-          id: examination?.id, // ensure id is passed for update
-          type: 'anamnesis',
-        } as Examination);
-        toast({
-          title: "Sukses",
-          description: "Data anamnesis berhasil disimpan.",
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Gagal menyimpan data anamnesis.",
-          variant: "destructive",
-        });
-      }
-    });
-  };
-
-  return (
-    <FormProvider {...form}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <div className="p-6 border rounded-lg bg-card shadow-sm">
-            <AnamnesisFormFields />
-          </div>
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isPending}>
-              {isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
-              ) : (
-                <><Save className="w-4 h-4 mr-2" /> Simpan Anamnesis</>
-              )}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </FormProvider>
   );
 }
