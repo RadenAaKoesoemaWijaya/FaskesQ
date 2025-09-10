@@ -1,76 +1,168 @@
 
-import { defineFlow } from '@genkit-ai/flow';
-import { z } from 'zod';
-import { geminiPro } from 'genkitx-googleai';
+'use server';
+/**
+ * @fileOverview A Genkit flow for handling teleconsultation chatbot conversations,
+ * with integrated health screening capabilities.
+ */
 
-// Gunakan skema yang sama dari medical-scribe-flow untuk konsistensi
-// (Dalam proyek nyata, ini akan diimpor dari file bersama)
-const MedicalRecordSchema = z.object({
-  anamnesis: z.object({
-    mainComplaint: z.string(),
-    historyOfPresentIllness: z.string(),
-    pastMedicalHistory: z.string(),
-    allergies: z.string(),
-  }),
-  physicalExam: z.string(),
-  supportingExams: z.object({
-    requests: z.array(z.object({ examName: z.string(), notes: z.string() })),
-    results: z.string(),
-  }),
-  assessmentAndPlan: z.string(),
-});
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import { getScreeningClusters, saveScreeningResult } from '@/lib/data';
 
-const teleconsultPrompt = `
-Anda adalah AI asisten dokter. Mulai percakapan dengan ramah, tanyakan keluhan utama pasien, dan gali informasi untuk melengkapi anamnesis (riwayat penyakit sekarang, riwayat penyakit dahulu, alergi). 
+// Helper function to calculate age from date of birth
+const getAge = (dateString: string) => {
+  if (!dateString) return 0;
+  const today = new Date();
+  const birthDate = new Date(dateString);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
-Riwayat Percakapan Sejauh Ini:
-{history}
-
-Pesan Terakhir Pengguna: 
-{query}
-
-Berikan respons yang empatik dan ajukan pertanyaan lanjutan yang relevan untuk melengkapi data medis. Jaga agar percakapan tetap mengalir secara alami.
-`;
-
-export const teleconsultChatbotFlow = defineFlow(
+// Tool: Get screening questions for the patient's age and a chosen screening category
+const getScreeningQuestions = ai.defineTool(
   {
-    name: 'teleconsultChatbotFlow',
+    name: 'getScreeningQuestions',
+    description: 'Ambil daftar pertanyaan skrining kesehatan yang relevan untuk pasien berdasarkan kategori yang dipilih dokter.',
     inputSchema: z.object({
-      patientId: z.string(),
-      query: z.string(),
-      history: z.array(z.object({ role: z.enum(['user', 'model']), content: z.string() })).optional(),
+      patientAge: z.number().describe('Usia pasien saat ini.'),
+      chosenScreeningName: z.string().describe('Nama skrining yang dipilih oleh dokter untuk dilakukan.')
     }),
     outputSchema: z.object({
-        response: z.string(),
-        // Pertimbangkan untuk mengembalikan data terstruktur di setiap giliran
-        // structuredData: MedicalRecordSchema.partial().optional(), 
+      screeningName: z.string().describe('Nama skrining yang cocok.'),
+      questions: z.array(z.object({
+          id: z.string(),
+          text: z.string(),
+      })).describe('Daftar pertanyaan skrining.'),
     }),
   },
-  async (input) => {
-    const { query, history = [], patientId } = input;
+  async ({ patientAge, chosenScreeningName }) => {
+    console.log(`Tool called: getScreeningQuestions for age ${patientAge} and screening "${chosenScreeningName}"`);
+    const clusters = await getScreeningClusters();
+    // Find the cluster that matches the name chosen by the doctor.
+    const relevantCluster = clusters.find(c => c.name.toLowerCase() === chosenScreeningName.toLowerCase());
 
-    // Gabungkan riwayat untuk konteks
-    const historyText = history.map(h => `${h.role}: ${h.content}`).join('\n');
-
-    const response = await ai.generate({
-      model: geminiPro,
-      prompt: teleconsultPrompt
-        .replace('{history}', historyText)
-        .replace('{query}', query),
-      config: {
-        temperature: 0.5, // Sedikit lebih kreatif untuk percakapan
-      },
-    });
-
-    const responseText = response.text();
-
-    // Setelah setiap giliran atau di akhir, Anda bisa memanggil medicalScribeFlow
-    // untuk mengekstrak data dari keseluruhan percakapan.
-    // const fullTranscript = historyText + `\nuser: ${query}\nmodel: ${responseText}`;
-    // await runFlow(medicalScribeFlow, { transcript: fullTranscript, patientId });
+    if (!relevantCluster) {
+      return { screeningName: '', questions: [] };
+    }
 
     return {
-      response: responseText,
+        screeningName: relevantCluster.name,
+        questions: relevantCluster.questions,
     };
+  }
+);
+
+
+// Tool: Save screening answers to the patient's record
+const saveScreeningAnswers = ai.defineTool(
+    {
+        name: 'saveScreeningAnswers',
+        description: "Simpan jawaban dari kuesioner skrining ke rekam medis pasien.",
+        inputSchema: z.object({
+            patientId: z.string().describe("ID unik pasien."),
+            screeningName: z.string().describe("Nama skrining yang digunakan."),
+            answers: z.array(z.object({
+                questionId: z.string().describe("ID pertanyaan."),
+                questionText: z.string().describe("Teks lengkap pertanyaan."),
+                answer: z.string().describe("Jawaban pasien."),
+            })).describe("Daftar jawaban pasien untuk setiap pertanyaan skrining.")
+        }),
+        outputSchema: z.object({
+            success: z.boolean(),
+        }),
+    },
+    async (input) => {
+        console.log(`Tool called: saveScreeningAnswers for patient ${input.patientId}`);
+        try {
+            // Note: The data schema uses 'clusterName', so we adapt to it here.
+            await saveScreeningResult(input.patientId, {
+                clusterName: input.screeningName,
+                answers: input.answers,
+            });
+            return { success: true };
+        } catch (error) {
+            console.error("Failed to save screening results:", error);
+            return { success: false };
+        }
+    }
+);
+
+
+const ChatMessageSchema = z.object({
+  role: z.enum(['user', 'model', 'tool']),
+  content: z.string(),
+});
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
+
+const TeleconsultChatbotInputSchema = z.object({
+  patientId: z.string().describe("The unique ID of the patient."),
+  patientName: z.string().describe("The name of the patient."),
+  patientDob: z.string().describe("The patient's date of birth (YYYY-MM-DD)."),
+  history: z.array(ChatMessageSchema).describe("The history of the conversation so far."),
+});
+export type TeleconsultChatbotInput = z.infer<typeof TeleconsultChatbotInputSchema>;
+
+const TeleconsultChatbotOutputSchema = z.object({
+  history: z.array(ChatMessageSchema).describe('The updated history of the conversation.'),
+});
+export type TeleconsultChatbotOutput = z.infer<typeof TeleconsultChatbotOutputSchema>;
+
+export async function teleconsultChatbot(input: TeleconsultChatbotInput): Promise<TeleconsultChatbotOutput> {
+  return teleconsultChatbotFlow(input);
+}
+
+
+const teleconsultChatbotFlow = ai.defineFlow(
+  {
+    name: 'teleconsultChatbotFlow',
+    inputSchema: TeleconsultChatbotInputSchema,
+    outputSchema: TeleconsultChatbotOutputSchema,
+  },
+  async (input) => {
+    const patientAge = getAge(input.patientDob);
+    
+    // Convert Genkit-style history to Gemini-style history
+    const history = input.history.map(h => ({
+        role: h.role,
+        parts: [{ text: h.content }],
+    }));
+
+    const result = await ai.generate({
+        model: 'googleai/gemini-pro',
+        tools: [getScreeningQuestions, saveScreeningAnswers],
+        history: history,
+        prompt: `Anda adalah AI asisten medis yang cerdas dan proaktif. Anda membantu dokter (pengguna) selama sesi telekonsultasi dengan pasien bernama ${
+            input.patientName
+        }.
+        
+        Usia Pasien: ${patientAge} tahun.
+        ID Pasien: ${input.patientId}
+        
+        Tugas Anda:
+        1.  **Awali Percakapan**: Jika histori kosong, sapa dokter, sebutkan nama dan usia pasien, lalu tanyakan apa yang bisa Anda bantu.
+        2.  **Tawarkan Bantuan Skrining**: Secara proaktif, tawarkan bantuan untuk melakukan skrining kesehatan yang relevan dengan usia pasien. Contoh: "Dok, karena pasien berusia ${patientAge} tahun, apakah ada skrining kesehatan yang ingin kita lakukan, seperti skrining hipertensi atau diabetes?"
+        3.  **Gunakan Tools**: Jika dokter meminta untuk melakukan skrining, gunakan tool \`getScreeningQuestions\` untuk mendapatkan pertanyaannya. Setelah mendapatkan pertanyaan, ajukan satu per satu kepada dokter. Setelah jawaban terkumpul, gunakan tool \`saveScreeningAnswers\` untuk menyimpannya. Pastikan Anda menyertakan patientId yang benar saat menyimpan.
+        4.  **Responsif**: Jawab semua pertanyaan dan perintah dokter secara singkat dan profesional dalam Bahasa Indonesia.
+        `,
+        config: {
+        temperature: 0.3,
+        },
+    });
+
+    const outputHistory = result.history();
+    const lastResponse = outputHistory[outputHistory.length - 1];
+
+    // Convert the last response back to the simple ChatMessage format
+    const responseMessage: ChatMessage = {
+      role: lastResponse.role,
+      content: lastResponse.parts[0].text || '',
+    };
+    
+    return { history: [...input.history, responseMessage] };
   }
 );
