@@ -34,14 +34,6 @@ import { type MedicalScribeOutput } from '@/app/actions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useRouter } from 'next/navigation';
 
-// Definisikan tipe untuk props halaman
-interface PageProps {
-  params: {
-    id: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
-
 const formSchema = z.object({
   // Anamnesis
   mainComplaint: z.string().min(1, 'Keluhan utama tidak boleh kosong.'),
@@ -559,7 +551,7 @@ function PatientDetailPageContent({ id }: { id: string }) {
   );
 }
 
-export default function PatientDetailPage({ params }: PageProps) {
+export default function PatientDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   if (!id) {
     notFound();
