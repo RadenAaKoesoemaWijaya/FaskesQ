@@ -14,9 +14,9 @@ interface MedicalScribeProps {
 }
 
 /**
- * A client-side component that provides a user interface for recording audio,
- * transcribing it using the Web Speech API, and sending it to an AI
- * for processing into a structured medical record.
+ * Komponen sisi klien yang menyediakan antarmuka pengguna untuk merekam audio,
+ * mentranskripsikannya menggunakan Web Speech API, dan mengirimkannya ke AI
+ * untuk diproses menjadi rekam medis terstruktur.
  */
 export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
   const { toast } = useToast();
@@ -25,26 +25,26 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Ref to hold the SpeechRecognition instance
+  // Ref untuk menampung instance SpeechRecognition
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    // Check for browser support for the Web Speech API
+    // Periksa dukungan browser untuk Web Speech API
     // @ts-ignore
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setError('Speech recognition not supported in this browser. Please use Google Chrome.');
+      setError('Pengenalan suara tidak didukung di browser ini. Silakan gunakan Google Chrome.');
       return;
     }
 
-    // Initialize the SpeechRecognition instance
+    // Inisialisasi instance SpeechRecognition
     recognitionRef.current = new SpeechRecognition();
     const recognition = recognitionRef.current;
-    recognition.continuous = true; // Keep listening even after a pause
-    recognition.interimResults = true; // Get results as the user speaks
-    recognition.lang = 'id-ID'; // Set language to Indonesian
+    recognition.continuous = true; // Tetap mendengarkan bahkan setelah jeda
+    recognition.interimResults = true; // Dapatkan hasil saat pengguna berbicara
+    recognition.lang = 'id-ID'; // Atur bahasa ke Bahasa Indonesia
 
-    // Event handler for when speech is recognized
+    // Event handler ketika ucapan dikenali
     recognition.onresult = (event: any) => {
       let interimTranscript = '';
       let finalTranscript = '';
@@ -55,28 +55,28 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      // Update transcript with final results
+      // Perbarui transkrip dengan hasil akhir
       setTranscript(prev => prev + finalTranscript);
     };
 
-    // Event handler for recognition errors
+    // Event handler untuk error pengenalan
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error", event.error);
+      console.error("Kesalahan pengenalan suara", event.error);
       toast({
         variant: "destructive",
-        title: "Voice Recognition Error",
-        description: `An error occurred: ${event.error}. Please ensure microphone permission is granted.`,
+        title: "Kesalahan Pengenalan Suara",
+        description: `Terjadi kesalahan: ${event.error}. Pastikan izin mikrofon telah diberikan.`,
       });
       setIsRecording(false);
     };
 
-    // Cleanup function to stop recognition when the component unmounts
+    // Fungsi cleanup untuk menghentikan pengenalan saat komponen dilepas
     return () => {
       recognitionRef.current?.stop();
     };
   }, [toast]);
 
-  // Toggles the recording state
+  // Mengubah status perekaman
   const handleToggleRecording = () => {
     if (isRecording) {
       recognitionRef.current?.stop();
@@ -86,7 +86,7 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
     setIsRecording(!isRecording);
   };
 
-  // Resets the transcript and stops recording
+  // Mereset transkrip dan menghentikan perekaman
   const handleReset = () => {
     setTranscript('');
     if (isRecording) {
@@ -95,12 +95,12 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
     }
   };
 
-  // Processes the transcript with the AI scribe
+  // Memproses transkrip dengan AI scribe
   const handleProcessTranscript = async () => {
     if (!transcript.trim()) {
       toast({
-        title: "Transcript is Empty",
-        description: "There is no transcript to process.",
+        title: "Transkrip Kosong",
+        description: "Tidak ada transkrip untuk diproses.",
         variant: "destructive",
       });
       return;
@@ -112,25 +112,25 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
 
     if (result.success && result.data) {
       toast({
-        title: "Processing Successful",
-        description: "The form has been filled based on the transcript.",
+        title: "Pemrosesan Berhasil",
+        description: "Formulir telah diisi berdasarkan transkrip.",
       });
       onScribeComplete(result.data);
     } else {
       toast({
-        title: "Processing Failed",
-        description: result.error || "An unknown error occurred.",
+        title: "Pemrosesan Gagal",
+        description: result.error || "Terjadi kesalahan yang tidak diketahui.",
         variant: "destructive",
       });
     }
   };
 
-  // Render error alert if feature is not available
+  // Render alert error jika fitur tidak tersedia
   if (error) {
     return (
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Feature Not Available</AlertTitle>
+        <AlertTitle>Fitur Tidak Tersedia</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
@@ -144,7 +144,7 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
           AI Medical Scribe
         </CardTitle>
         <CardDescription>
-          Record your conversation with the patient, and let the AI fill in the relevant fields automatically.
+          Rekam percakapan Anda dengan pasien, dan biarkan AI mengisi kolom yang relevan secara otomatis.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -152,7 +152,7 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Button onClick={handleToggleRecording} size="lg" className="w-full sm:w-auto">
               {isRecording ? <MicOff className="mr-2" /> : <Mic className="mr-2" />}
-              {isRecording ? 'Stop Recording' : transcript ? 'Resume Recording' : 'Start Recording'}
+              {isRecording ? 'Berhenti Merekam' : transcript ? 'Lanjutkan Merekam' : 'Mulai Merekam'}
             </Button>
             <Button onClick={handleReset} size="lg" variant="outline" className="w-full sm:w-auto">
               <RotateCcw className="mr-2" />
@@ -160,23 +160,23 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
             </Button>
             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1">
               {isRecording && <Loader2 className="animate-spin h-4 w-4" />}
-              <span>{isRecording ? 'Listening...' : 'Click the button to start voice transcription.'}</span>
+              <span>{isRecording ? 'Mendengarkan...' : 'Klik tombol untuk memulai transkripsi suara.'}</span>
             </div>
           </div>
 
           <Textarea
-            placeholder="The conversation transcript will appear here..."
+            placeholder="Transkrip percakapan akan muncul di sini..."
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
             rows={6}
-            readOnly={isRecording} // Make textarea readonly while recording
+            readOnly={isRecording} // Jadikan textarea hanya bisa dibaca saat merekam
           />
 
           <Button onClick={handleProcessTranscript} disabled={isProcessing || !transcript.trim()}>
             {isProcessing ? (
-              <><Loader2 className="mr-2 animate-spin" /> Processing...</>
+              <><Loader2 className="mr-2 animate-spin" /> Memproses...</>
             ) : (
-              'Process Transcript with AI'
+              'Proses Transkrip dengan AI'
             )}
           </Button>
         </div>
