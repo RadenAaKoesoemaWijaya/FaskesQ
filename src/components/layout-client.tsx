@@ -1,37 +1,17 @@
-'use client';
+"use client";
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarInset, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/main-nav';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import { Bell, UserCircle, LogOut } from 'lucide-react';
+import { Bell, UserCircle } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useToast } from '@/hooks/use-toast';
 
-export function LayoutContent({ children }: { children: React.ReactNode }) {
+export function LayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { toast } = useToast();
   const isLoginPage = pathname === '/login';
-
-  useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    if (!isLoggedIn && !isLoginPage) {
-      router.push('/login');
-    }
-  }, [pathname, router, isLoginPage]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    toast({
-      title: 'Logout Berhasil',
-      description: 'Anda telah keluar dari aplikasi.',
-    });
-    router.push('/login');
-  };
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -52,10 +32,6 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
               <UserCircle className="size-4" />
               <span className="group-data-[collapsible=icon]:hidden">Profil</span>
             </Link>
-          </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleLogout}>
-            <LogOut className="size-4" />
-            <span className="group-data-[collapsible=icon]:hidden">Logout</span>
           </Button>
         </SidebarFooter>
       </Sidebar>
