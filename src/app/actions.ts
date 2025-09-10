@@ -65,6 +65,8 @@ export async function getMedicalResume(
   }
 }
 
+export type { MedicalScribeOutput };
+
 export async function runMedicalScribe(
   input: MedicalScribeInput
 ): Promise<{
@@ -84,6 +86,8 @@ export async function runMedicalScribe(
     };
   }
 }
+
+export type { SuggestIcd10Output };
 
 export async function runSuggestIcd10(
   input: SuggestIcd10Input
@@ -105,6 +109,7 @@ export async function runSuggestIcd10(
   }
 }
 
+export type { SuggestDifferentialDiagnosisOutput };
 export async function runSuggestDifferentialDiagnosis(input: SuggestDifferentialDiagnosisInput): Promise<{
     success: boolean;
     data?: SuggestDifferentialDiagnosisOutput;
@@ -134,6 +139,8 @@ export async function deletePatientAction(id: string) {
     }
 }
 
+export type { TeleconsultChatbotOutput, ChatMessage };
+
 export async function runTeleconsultChatbot(
   input: TeleconsultChatbotInput
 ): Promise<{
@@ -154,6 +161,7 @@ export async function runTeleconsultChatbot(
   }
 }
 
+export type { VerifyBpjsOutput };
 export async function runVerifyBpjs(input: VerifyBpjsInput): Promise<{
   success: boolean;
   data?: VerifyBpjsOutput;
@@ -169,6 +177,7 @@ export async function runVerifyBpjs(input: VerifyBpjsInput): Promise<{
 }
 
 
+export type { SendToSatuSehatOutput };
 export async function runSendToSatuSehat(input: SendToSatuSehatInput): Promise<{
   success: boolean;
   data?: SendToSatuSehatOutput;
@@ -183,6 +192,7 @@ export async function runSendToSatuSehat(input: SendToSatuSehatInput): Promise<{
     }
 }
 
+export type { AnalyzeTestimonialSentimentOutput };
 export async function runAnalyzeTestimonialSentiment(
   input: AnalyzeTestimonialSentimentInput
 ): Promise<{
