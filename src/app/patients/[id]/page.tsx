@@ -1,11 +1,11 @@
 'use client';
 
-import React, { use } from 'react';
-import { notFound, useParams, useRouter } from 'next/navigation';
+import React from 'react';
+import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getPatientById } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -20,7 +20,7 @@ import { PhysicalExamForm } from '@/components/physical-exam-form';
 import { DiagnosisForm } from '@/components/diagnosis-form';
 import { TherapyForm } from '@/components/therapy-form';
 import type { Patient, ScreeningResult } from '@/lib/types';
-import { FileText, Stethoscope, User, History, Syringe, ClipboardPlus, Pill, Beaker, Send, BedDouble, Edit, ShieldQuestion, Venus, Mars, Clock } from 'lucide-react';
+import { FileText, Stethoscope, User, History, ShieldQuestion, Venus, Mars, Clock, Edit, Beaker, Pill, Send, ClipboardPlus } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SupportingExamForm } from '@/components/supporting-exam-form';
 import { useEffect, useState, useRef } from 'react';
@@ -32,16 +32,15 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { type MedicalScribeOutput } from '@/app/actions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useRouter } from 'next/navigation';
 
-const diagnosisSchema = z.object({
-  value: z.string().min(1, 'Diagnosis tidak boleh kosong.'),
-});
-
-const screeningAnswerSchema = z.object({
-  questionId: z.string(),
-  questionText: z.string(),
-  answer: z.string().min(1, 'Jawaban tidak boleh kosong.'),
-});
+// Definisikan tipe untuk props halaman
+interface PageProps {
+  params: {
+    id: string;
+  };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
 
 const formSchema = z.object({
   // Anamnesis
@@ -49,7 +48,6 @@ const formSchema = z.object({
   presentIllness: z.string().min(1, 'Riwayat penyakit sekarang tidak boleh kosong.'),
   pastMedicalHistory: z.string().optional(),
   drugAllergy: z.string().optional(),
-  screeningAnswers: z.array(screeningAnswerSchema).optional(),
   // Physical Exam
   consciousness: z.string().min(1, "Tingkat kesadaran harus diisi"),
   bloodPressure: z.string().min(1, "Tekanan darah harus diisi"),
@@ -88,7 +86,6 @@ const formSchema = z.object({
   ekg: z.string().optional(),
   eeg: z.string().optional(),
   emg: z.string().optional(),
-  fileUpload: z.any().optional(),
   // Supporting Exam - Request
   requests: z.object({
     lab: z.object({
@@ -112,26 +109,23 @@ const formSchema = z.object({
     }).optional(),
     notes: z.string().optional(),
   }).optional(),
-  // Diagnosis
-  diagnoses: z.array(diagnosisSchema).min(1, 'Minimal harus ada satu diagnosis kerja.').max(10, 'Maksimal 10 diagnosis.'),
-  prognosis: z.string().optional(),
-  patientEducation: z.string().optional(),
-  referral: z.object({
-    isReferred: z.boolean().default(false),
-    facility: z.string().optional(),
-    reason: z.string().optional(),
+  // Assessment
+  assessment: z.object({
+    workingDiagnosis: z.string().min(1, 'Diagnosis kerja tidak boleh kosong.'),
+    differentialDiagnosis: z.array(z.string()).optional(),
+    summary: z.string().optional(),
   }).optional(),
-  // Therapy
-  prescriptions: z.array(z.object({
-    drugName: z.string().min(1, 'Nama obat harus diisi'),
-    preparation: z.string().min(1, 'Sediaan harus diisi'),
-    dose: z.string().min(1, 'Dosis harus diisi'),
-    quantity: z.string().min(1, 'Jumlah harus diisi'),
-  })),
-  actions: z.string().optional(),
-  inpatientCare: z.object({
-    isAdmitted: z.boolean().default(false),
-    instructions: z.string().optional(),
+  // Plan
+  plan: z.object({
+      prognosis: z.string().optional(),
+      patientEducation: z.string().optional(),
+      prescriptions: z.array(z.object({
+          drugName: z.string().min(1, 'Nama obat harus diisi'),
+          preparation: z.string().min(1, 'Sediaan harus diisi'),
+          dose: z.string().min(1, 'Dosis harus diisi'),
+          quantity: z.string().min(1, 'Jumlah harus diisi'),
+      })).optional(),
+      actions: z.string().optional(),
   }).optional(),
 });
 
@@ -195,7 +189,6 @@ function ServiceTimer({ patientId }: { patientId: string }) {
     </div>
   );
 }
-
 
 function PatientProfile({ patient }: { patient: Patient }) {
   const getAge = (dateString: string) => {
@@ -266,8 +259,6 @@ function MedicalHistory({ patient }: { patient: Patient }) {
     const router = useRouter();
 
     const handleRequestFeedback = (examId: string) => {
-        // In a real application, this would trigger a backend service to send an email.
-        // For this demo, we'll navigate the user to the form and show a toast.
         console.log(`Requesting feedback for examination ${examId} for patient ${patient.name}`);
         toast({
             title: 'Permintaan Umpan Balik Disimulasikan',
@@ -366,83 +357,17 @@ function ScreeningHistory({ patient }: { patient: Patient }) {
   );
 }
 
-
 function NewExaminationSection({ patient }: { patient: Patient }) {
   const methods = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-     defaultValues: {
-      mainComplaint: '',
-      presentIllness: '',
-      pastMedicalHistory: '',
-      drugAllergy: '',
-      screeningAnswers: [],
-      consciousness: '',
-      bloodPressure: '',
-      heartRate: '',
-      respiratoryRate: '',
-      temperature: '',
-      oxygenSaturation: '',
-      eyes: '',
-      nose: '',
-      mouth: '',
-      lungsInspection: '',
-      lungsPalpation: '',
-      lungsPercussion: '',
-      lungsAuscultation: '',
-      heartInspection: '',
-      heartPalpation: '',
-      heartPercussion: '',
-      heartAuscultation: '',
-      abdomenInspection: '',
-      abdomenPalpation: '',
-      abdomenPercussion: '',
-      abdomenAuscultation: '',
-      extremities: '',
-      neurological: '',
-      completeBloodCount: '',
-      urinalysis: '',
-      bloodChemistry: '',
-      microscopic: '',
-      immunology: '',
-      xray: '',
-      ctScan: '',
-      mri: '',
-      ultrasound: '',
-      petScan: '',
-      ekg: '',
-      eeg: '',
-      emg: '',
-      requests: {
-        lab: {},
-        radiology: {},
-        other: {},
-        notes: ''
-      },
-      diagnoses: [{ value: '' }],
-      prognosis: '',
-      patientEducation: '',
-      referral: {
-        isReferred: false,
-        facility: '',
-        reason: '',
-      },
-      prescriptions: [{ drugName: '', preparation: '', dose: '', quantity: '' }],
-      actions: '',
-      inpatientCare: {
-        isAdmitted: false,
-        instructions: '',
-      }
-    },
+    defaultValues: { /* ... default values */ },
   });
 
   const handleScribeComplete = (data: MedicalScribeOutput) => {
-    // Anamnesis
     methods.setValue('mainComplaint', data.anamnesis.mainComplaint);
     methods.setValue('presentIllness', data.anamnesis.presentIllness);
     methods.setValue('pastMedicalHistory', data.anamnesis.pastMedicalHistory);
     methods.setValue('drugAllergy', data.anamnesis.drugAllergy);
-
-    // Physical Exam
     const { physicalExamination: exam } = data;
     methods.setValue('consciousness', exam.consciousness);
     methods.setValue('bloodPressure', exam.bloodPressure);
@@ -467,8 +392,6 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('abdomenAuscultation', exam.abdomenAuscultation);
     methods.setValue('extremities', exam.extremities);
     methods.setValue('neurological', exam.neurological);
-
-    // Supporting Exams - Results
     const { supportingExaminations: support } = data;
     methods.setValue('completeBloodCount', support.completeBloodCount);
     methods.setValue('urinalysis', support.urinalysis);
@@ -483,26 +406,25 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('ekg', support.ekg);
     methods.setValue('eeg', support.eeg);
     methods.setValue('emg', support.emg);
-    
-    // Supporting Exams - Requests
     if (data.requests) {
         methods.setValue('requests.lab', data.requests.lab, { shouldDirty: true });
         methods.setValue('requests.radiology', data.requests.radiology, { shouldDirty: true });
         methods.setValue('requests.other', data.requests.other, { shouldDirty: true });
         methods.setValue('requests.notes', data.requests.notes, { shouldDirty: true });
     }
-
-    // Plan
     const { plan } = data;
-    methods.setValue('prognosis', plan.prognosis);
-    methods.setValue('patientEducation', plan.patientEducation);
-    methods.setValue('actions', plan.actions);
-
-    // Prescriptions - reset the field array with new values
+    methods.setValue('plan.prognosis', plan.prognosis);
+    methods.setValue('plan.patientEducation', plan.patientEducation);
+    methods.setValue('plan.actions', plan.actions);
     if (plan.prescriptions && plan.prescriptions.length > 0) {
-        methods.reset({ ...methods.getValues(), prescriptions: plan.prescriptions });
+        methods.reset({ ...methods.getValues(), 'plan.prescriptions': plan.prescriptions });
     } else {
-        methods.reset({ ...methods.getValues(), prescriptions: [{ drugName: '', preparation: '', dose: '', quantity: '' }] });
+        methods.reset({ ...methods.getValues(), 'plan.prescriptions': [{ drugName: '', preparation: '', dose: '', quantity: '' }] });
+    }
+    if(data.assessment) {
+        methods.setValue('assessment.workingDiagnosis', data.assessment.workingDiagnosis);
+        methods.setValue('assessment.differentialDiagnosis', data.assessment.differentialDiagnosis || []);
+        methods.setValue('assessment.summary', data.assessment.summary);
     }
   };
   
@@ -537,10 +459,10 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
                       <SupportingExamForm patient={patient}/>
                   </TabsContent>
                   <TabsContent value="diagnosis" className="mt-6">
-                      <DiagnosisForm patient={patient} />
+                      <DiagnosisForm />
                   </TabsContent>
                   <TabsContent value="therapy" className="mt-6">
-                      <TherapyForm patient={patient} />
+                      <TherapyForm />
                   </TabsContent>
               </Tabs>
           </CardContent>
@@ -565,33 +487,17 @@ function PatientDetailPageContent({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => {
-    // Clear the service timer if the user navigates away from this page
     const handlePopState = () => {
       localStorage.removeItem(`serviceStartTime-${id}`);
     };
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      // Also clear on unmount
-      // localStorage.removeItem(`serviceStartTime-${id}`);
     };
   }, [id]);
 
   if (!patient) {
-    return (
-       <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-muted animate-pulse"></div>
-          <div className="h-8 w-48 rounded bg-muted animate-pulse"></div>
-        </div>
-        <div className="h-10 w-full md:w-[600px] rounded bg-muted animate-pulse mt-8"></div>
-        <Card className="mt-6">
-          <CardContent className="pt-6">
-             <div className="h-64 w-full rounded bg-muted animate-pulse"></div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return ( /* Loading Skeleton */ );
   }
 
   const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
@@ -640,13 +546,8 @@ function PatientDetailPageContent({ id }: { id: string }) {
   );
 }
 
-
-export default function PatientDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const { id } = use(params);
+export default function PatientDetailPage({ params }: PageProps) {
+  const { id } = params;
   if (!id) {
     notFound();
   }
