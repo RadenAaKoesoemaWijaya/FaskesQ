@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Bot, Loader2, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Mic, MicOff, Bot, Loader2, AlertTriangle, RotateCcw, Pause } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from './ui/textarea';
 import { runMedicalScribe, type MedicalScribeOutput } from '@/app/actions';
@@ -13,12 +13,15 @@ interface MedicalScribeProps {
   onScribeComplete: (data: MedicalScribeOutput) => void;
 }
 
+type RecordingState = 'inactive' | 'recording' | 'paused' | 'error';
+
 export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
   const { toast } = useToast();
-  const [isRecording, setIsRecording] = useState(false);
+  const [recordingState, setRecordingState] = useState<RecordingState>('inactive');
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const accumulatedTranscriptRef = useRef('');
 
   useEffect(() => {
     // @ts-ignore
@@ -31,31 +34,49 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
       recognition.lang = 'id-ID';
 
       recognition.onresult = (event: any) => {
-        let finalTranscript = '';
+        let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript + ' ';
+            accumulatedTranscriptRef.current += event.results[i][0].transcript + ' ';
+          } else {
+            interimTranscript += event.results[i][0].transcript;
           }
         }
-        setTranscript(prev => prev + finalTranscript);
+        setTranscript(accumulatedTranscriptRef.current + interimTranscript);
+      };
+
+      recognition.onend = () => {
+        // Otomatis berhenti jika state bukan 'recording' (misal, karena jeda atau stop manual)
+        if (recordingState === 'recording') {
+            // Jika terhenti sendiri, coba mulai ulang.
+            console.log("Speech recognition stopped unexpectedly. Restarting...");
+            recognition.start();
+        }
       };
 
       recognition.onerror = (event: any) => {
         console.error("Speech recognition error", event.error);
+        let errorMessage = `Terjadi kesalahan: ${event.error}. Pastikan Anda telah memberikan izin mikrofon.`;
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            errorMessage = "Izin mikrofon ditolak. Aktifkan izin mikrofon di pengaturan browser Anda untuk menggunakan fitur ini.";
+        } else if (event.error === 'no-speech') {
+            errorMessage = "Tidak ada suara terdeteksi. Silakan coba lagi.";
+        }
         toast({
             variant: "destructive",
             title: "Error Pengenalan Suara",
-            description: `Terjadi kesalahan: ${event.error}. Pastikan Anda telah memberikan izin mikrofon.`,
+            description: errorMessage,
         });
-        setIsRecording(false);
+        setRecordingState('error');
       };
 
     } else {
          toast({
             variant: "destructive",
             title: "Browser Tidak Mendukung",
-            description: "Maaf, browser Anda tidak mendukung fitur pengenalan suara.",
+            description: "Maaf, browser Anda tidak mendukung fitur pengenalan suara. Silakan gunakan Google Chrome.",
         });
+        setRecordingState('error');
     }
 
     return () => {
@@ -63,28 +84,39 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
         recognitionRef.current.stop();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
 
-  const handleToggleRecording = () => {
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-    } else {
-      recognitionRef.current?.start();
-      setIsRecording(true);
+  const handleStartRecording = () => {
+    if (recognitionRef.current) {
+        accumulatedTranscriptRef.current = transcript; // Simpan transkrip yang ada
+        recognitionRef.current.start();
+        setRecordingState('recording');
     }
   };
 
-  const handleResetTranscript = () => {
-    setTranscript('');
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
+  const handlePauseRecording = () => {
+    if (recognitionRef.current) {
+        recognitionRef.current.stop(); // Menghentikan sementara, onend akan menangani state
+        setRecordingState('paused');
+    }
+  };
+
+  const handleStopRecording = () => {
+     if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        setRecordingState('inactive');
     }
   }
 
+  const handleReset = () => {
+    handleStopRecording();
+    setTranscript('');
+    accumulatedTranscriptRef.current = '';
+  }
+
   const handleProcessTranscript = async () => {
-    if (!transcript) {
+    if (!transcript.trim()) {
         toast({
             title: "Transkrip Kosong",
             description: "Tidak ada transkrip untuk diproses.",
@@ -94,6 +126,7 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
     };
     
     setIsProcessing(true);
+    handleStopRecording(); // Hentikan rekaman sebelum memproses
     const result = await runMedicalScribe({ transcript });
     setIsProcessing(false);
 
@@ -111,6 +144,23 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
         });
     }
   };
+  
+  const getStatusMessage = () => {
+    switch (recordingState) {
+        case 'recording':
+            return { text: 'Sedang mendengarkan...', icon: <Loader2 className="animate-spin h-4 w-4" /> };
+        case 'paused':
+            return { text: 'Rekaman dijeda. Klik Mulai Merekam untuk melanjutkan.', icon: <Pause className="h-4 w-4" /> };
+        case 'inactive':
+            return { text: 'Klik Mulai Merekam untuk transkripsi suara.', icon: null };
+        case 'error':
+            return { text: 'Terjadi error. Periksa konsol atau izin browser.', icon: <AlertTriangle className="h-4 w-4 text-destructive" /> };
+        default:
+            return { text: '', icon: null };
+    }
+  }
+
+  const { text: statusText, icon: statusIcon } = getStatusMessage();
 
   return (
     <Card className="bg-secondary/50 mb-6">
@@ -120,11 +170,11 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
           AI Medical Scribe
         </CardTitle>
         <CardDescription>
-          Rekam percakapan Anda dengan pasien, dan biarkan AI mengisi kolom yang relevan secara otomatis.
+          Rekam percakapan Anda dengan pasien secara langsung. AI akan membuat transkrip dan mengisi kolom yang relevan secara otomatis.
         </CardDescription>
       </CardHeader>
       <CardContent>
-         {!recognitionRef.current && (
+         {recordingState === 'error' && !recognitionRef.current && (
             <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Fitur Tidak Tersedia</AlertTitle>
@@ -133,32 +183,44 @@ export function MedicalScribe({ onScribeComplete }: MedicalScribeProps) {
                 </AlertDescription>
             </Alert>
          )}
-         {recognitionRef.current && (
+         {recordingState !== 'error' && (
             <div className='space-y-4'>
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <Button onClick={handleToggleRecording} size="lg" className="w-full sm:w-auto">
-                        {isRecording ? <MicOff className="mr-2" /> : <Mic className="mr-2" />}
-                        {isRecording ? 'Jeda Merekam' : 'Mulai/Lanjutkan Merekam'}
+                <div className="flex flex-col sm:flex-row items-center gap-4 flex-wrap">
+                    {recordingState !== 'recording' && (
+                        <Button onClick={handleStartRecording} size="lg" disabled={isProcessing} className="w-full sm:w-auto">
+                            <Mic className="mr-2" />
+                            {recordingState === 'paused' ? 'Lanjutkan Merekam' : 'Mulai Merekam'}
+                        </Button>
+                    )}
+                    {recordingState === 'recording' && (
+                        <Button onClick={handlePauseRecording} size="lg" variant="secondary" disabled={isProcessing} className="w-full sm:w-auto">
+                            <Pause className="mr-2" />
+                            Jeda Merekam
+                        </Button>
+                    )}
+                     <Button onClick={handleStopRecording} size="lg" variant="destructive" disabled={recordingState === 'inactive'} className="w-full sm:w-auto">
+                        <MicOff className="mr-2" />
+                        Hentikan
                     </Button>
-                     <Button onClick={handleResetTranscript} size="lg" variant="outline" className="w-full sm:w-auto">
+                     <Button onClick={handleReset} size="lg" variant="outline" disabled={isProcessing || transcript.length === 0}>
                         <RotateCcw className="mr-2" />
                         Reset
                     </Button>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground flex-1">
-                        {isRecording && <Loader2 className="animate-spin h-4 w-4" />}
-                        <span>{isRecording ? 'Sedang mendengarkan...' : 'Klik untuk memulai transkripsi suara.'}</span>
-                    </div>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground min-h-[20px]">
+                    {statusIcon}
+                    <span>{statusText}</span>
                 </div>
                 
                 <Textarea
                     placeholder="Transkrip percakapan akan muncul di sini..."
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
-                    rows={5}
-                    readOnly={isRecording}
+                    rows={8}
+                    readOnly={recordingState === 'recording'}
                 />
                 
-                <Button onClick={handleProcessTranscript} disabled={isProcessing || !transcript}>
+                <Button onClick={handleProcessTranscript} disabled={isProcessing || !transcript.trim() || recordingState === 'recording'}>
                     {isProcessing && <Loader2 className="mr-2 animate-spin" />}
                     {isProcessing ? 'Memproses...' : 'Proses Transkrip dengan AI'}
                 </Button>
