@@ -138,9 +138,12 @@ const formSchema = z.object({
 function ServiceTimer({ patientId }: { patientId: string }) {
   const [elapsedTime, setElapsedTime] = useState('00:00');
   const [isServiceActive, setIsServiceActive] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    setIsClient(true);
+    
     const storageKey = `serviceStartTime-${patientId}`;
     let startTime = localStorage.getItem(storageKey);
 
@@ -178,6 +181,15 @@ function ServiceTimer({ patientId }: { patientId: string }) {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [patientId]);
+  
+  if (!isClient) {
+    return (
+      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-lg">
+        <Clock className="h-4 w-4 animate-pulse" />
+        <span>Waktu Pelayanan: 00:00</span>
+      </div>
+    );
+  }
   
   if (!isServiceActive) {
      return (
