@@ -155,6 +155,7 @@ export function TherapyForm({ patient }: { patient: Patient }) {
             let toastDescription = 'Data pemeriksaan berhasil disimpan dan ringkasan dibuat.';
 
             if (startTime && startTime !== 'completed') {
+                // Gunakan timestamp yang disimpan di localStorage untuk menghitung elapsed time
                 const elapsed = Math.floor((Date.now() - parseInt(startTime, 10)) / 1000);
                 const minutes = Math.floor(elapsed / 60);
                 const seconds = elapsed % 60;
