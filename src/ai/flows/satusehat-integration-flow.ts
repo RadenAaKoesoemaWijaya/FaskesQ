@@ -44,7 +44,7 @@ async function postToSatuSehat(data: SendToSatuSehatInput): Promise<Partial<Send
     // 4. Handle the response, checking for success or errors.
 
     // Simulate a successful response
-    const simulatedEncounterId = `enc-${Date.now()}`;
+    const simulatedEncounterId = `enc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     console.log(`[SIMULASI] Berhasil. SATU SEHAT Encounter ID: ${simulatedEncounterId}`);
     return { success: true, encounterId: simulatedEncounterId, message: 'Data berhasil dikirim (Simulasi).' };
 }
