@@ -38,6 +38,7 @@ export type Patient = PatientRegistrationData & {
   id: string;
   history: Examination[];
   screeningHistory?: ScreeningResult[];
+  allergies?: string[];
   created_at: string;
 };
 

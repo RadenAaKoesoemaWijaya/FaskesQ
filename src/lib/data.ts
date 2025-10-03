@@ -16,6 +16,14 @@ let dummyScreeningResults = [...screeningResults];
 // Helper to simulate database delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Helper to generate unique IDs safely (client-side only)
+const generateId = (prefix: string): string => {
+    // Use a combination of timestamp and random string to ensure uniqueness
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substr(2, 9);
+    return `${prefix}-${timestamp}-${randomStr}`;
+};
+
 // --- PATIENT FUNCTIONS ---
 
 export async function getPatients(query?: string): Promise<Patient[]> {
@@ -52,7 +60,7 @@ export async function getPatientById(id: string): Promise<Patient | undefined> {
 
 export async function addPatient(data: PatientRegistrationData): Promise<string> {
     await delay(500);
-    const newId = `patient-${Date.now()}`;
+    const newId = generateId('patient');
     const newPatient: Patient = {
         id: newId,
         ...data,
@@ -99,7 +107,7 @@ export async function getTestimonials(): Promise<Testimonial[]> {
 export async function addTestimonial(data: TestimonialSubmissionData): Promise<Testimonial> {
     await delay(400);
     const newTestimonial: Testimonial = {
-        id: `testimonial-${Date.now()}`,
+        id: generateId('testimonial'),
         ...data,
         date: new Date().toISOString(),
         created_at: new Date().toISOString(),
@@ -122,7 +130,7 @@ export async function getScreeningClusters(): Promise<ScreeningCluster[]> {
 export async function addScreeningCluster(data: Omit<ScreeningCluster, 'id' | 'questions' | 'created_at'>): Promise<ScreeningCluster> {
     await delay(200);
     const newCluster: ScreeningCluster = {
-        id: `cluster-${Date.now()}`,
+        id: generateId('cluster'),
         ...data,
         questions: [],
         created_at: new Date().toISOString(),
@@ -147,7 +155,7 @@ export async function deleteScreeningCluster(id: string): Promise<void> {
 export async function addScreeningQuestion(clusterId: string, questionText: string): Promise<ScreeningQuestion> {
     await delay(150);
     const newQuestion: ScreeningQuestion = {
-        id: `question-${Date.now()}`,
+        id: generateId('question'),
         cluster_id: clusterId,
         text: questionText,
         created_at: new Date().toISOString(),
@@ -175,7 +183,7 @@ export async function deleteScreeningQuestion(clusterId: string, questionId: str
 export async function saveScreeningResult(patientId: string, result: Omit<ScreeningResult, 'id' | 'date' | 'created_at'>): Promise<void> {
     await delay(300);
     const newResult: ScreeningResult = {
-        id: `screening-${Date.now()}`,
+        id: generateId('screening'),
         ...result,
         patient_id: patientId,
         date: new Date().toISOString(),
