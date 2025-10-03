@@ -20,12 +20,7 @@ import {
     type SuggestDifferentialDiagnosisInput,
     type SuggestDifferentialDiagnosisOutput
 } from '@/ai/flows/suggest-differential-diagnosis';
-import {
-  teleconsultChatbot,
-  type TeleconsultChatbotInput,
-  type TeleconsultChatbotOutput,
-  type ChatMessage,
-} from '@/ai/flows/teleconsult-chatbot-flow';
+
 import {
     verifyBpjs,
     type VerifyBpjsInput,
@@ -36,11 +31,30 @@ import {
     type SendToSatuSehatInput,
     type SendToSatuSehatOutput,
 } from '@/ai/flows/satusehat-integration-flow';
-import { 
+import {
     analyzeTestimonialSentiment, 
     type AnalyzeTestimonialSentimentInput, 
     type AnalyzeTestimonialSentimentOutput 
 } from '@/ai/flows/analyze-testimonial-sentiment';
+import {
+    analyzeMedicalImage,
+    type MedicalImageAnalysisInput,
+    type MedicalImageAnalysisOutput
+} from '@/ai/flows/medical-image-analysis-flow';
+import {
+    runWhatsAppChatbotAdvanced,
+    type WhatsAppChatbotAdvancedInput,
+    type WhatsAppChatbotAdvancedOutput,
+    type WhatsAppMessage,
+    type ConsultationContext
+} from '@/ai/flows/whatsapp-chatbot-advanced-flow';
+import {
+    runTelegramChatbotAdvanced,
+    type TelegramChatbotAdvancedInput,
+    type TelegramChatbotAdvancedOutput,
+    type TelegramMessage,
+    type TelegramConsultationContext
+} from '@/ai/flows/telegram-chatbot-advanced-flow';
 import { deletePatient as dbDeletePatient, updatePatient as dbUpdatePatient } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 
@@ -134,25 +148,7 @@ export async function deletePatientAction(id: string) {
     }
 }
 
-export async function runTeleconsultChatbot(
-  input: TeleconsultChatbotInput
-): Promise<{
-  success: boolean;
-  data?: TeleconsultChatbotOutput;
-  error?: string;
-}> {
-  try {
-    const result = await teleconsultChatbot(input);
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error running teleconsult chatbot:', error);
-    return {
-      success: false,
-      error:
-        'Terjadi kesalahan saat menghubungi chatbot. Silakan coba lagi.',
-    };
-  }
-}
+
 
 export async function runVerifyBpjs(input: VerifyBpjsInput): Promise<{
   success: boolean;
@@ -196,5 +192,62 @@ export async function runAnalyzeTestimonialSentiment(
   } catch (error: any) {
     console.error('Error running sentiment analysis:', error);
     return { success: false, error: error.message || 'Gagal menganalisis sentimen.' };
+  }
+}
+
+export async function runWhatsAppChatbotAdvancedAction(
+  input: WhatsAppChatbotAdvancedInput
+): Promise<{
+  success: boolean;
+  data?: WhatsAppChatbotAdvancedOutput;
+  error?: string;
+}> {
+  try {
+    const result = await runWhatsAppChatbotAdvanced(input);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Error running WhatsApp chatbot advanced:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Terjadi kesalahan saat menjalankan WhatsApp chatbot.' 
+    };
+  }
+}
+
+export async function analyzeMedicalImageAction(
+  input: MedicalImageAnalysisInput
+): Promise<{
+  success: boolean;
+  data?: MedicalImageAnalysisOutput;
+  error?: string;
+}> {
+  try {
+    const result = await analyzeMedicalImage(input);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Error analyzing medical image:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Terjadi kesalahan saat menganalisis gambar medis.' 
+    };
+  }
+}
+
+export async function runTelegramChatbotAdvancedAction(
+  input: TelegramChatbotAdvancedInput
+): Promise<{
+  success: boolean;
+  data?: TelegramChatbotAdvancedOutput;
+  error?: string;
+}> {
+  try {
+    const result = await runTelegramChatbotAdvanced(input);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Error running Telegram chatbot advanced:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Terjadi kesalahan saat menjalankan Telegram chatbot.' 
+    };
   }
 }
