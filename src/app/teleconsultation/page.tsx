@@ -19,7 +19,6 @@ import {
   Video,
   MessageSquare,
   Phone,
-  Bot,
   ArrowLeft,
   User,
   Venus,
@@ -28,7 +27,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { TeleconsultChatbot } from '@/components/teleconsult-chatbot';
+import { TelegramConsultation } from '@/components/telegram-consultation';
+import { WhatsAppConsultation } from '@/components/whatsapp-consultation';
 
 function PatientList({
   patients,
@@ -104,7 +104,7 @@ function ConsultationModeSelector({
   onModeSelect,
 }: {
   patient: Patient;
-  onModeSelect: (mode: 'ai' | 'whatsapp') => void;
+  onModeSelect: (mode: 'telegram' | 'whatsapp') => void;
 }) {
    const formatPhoneNumber = (contact: string) => {
     // Basic attempt to extract a valid phone number.
@@ -123,9 +123,7 @@ function ConsultationModeSelector({
   const phoneNumber = formatPhoneNumber(patient.contact);
 
   const handleWhatsAppChat = () => {
-    const message = encodeURIComponent(`Halo ${patient.name}, ini adalah pesan dari FaskesQ.`);
-    const url = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(url, '_blank');
+    onModeSelect('whatsapp');
   };
   
   const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
@@ -147,14 +145,14 @@ function ConsultationModeSelector({
       <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full max-w-md">
         <Card className="flex-1 hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className='flex items-center gap-2'><Bot /> Konsultasi AI</CardTitle>
+            <CardTitle className='flex items-center gap-2'><MessageSquare /> Via Telegram</CardTitle>
             <CardDescription>
-              Lakukan simulasi konsultasi dengan chatbot AI.
+              Konsultasi melalui aplikasi Telegram dengan fitur rekaman suara.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" onClick={() => onModeSelect('ai')}>
-              Mulai Konsultasi AI
+            <Button className="w-full" onClick={() => onModeSelect('telegram')}>
+              Mulai Chat Telegram
             </Button>
           </CardContent>
         </Card>
@@ -179,10 +177,11 @@ function ConsultationModeSelector({
 function TeleconsultationContent() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [consultationMode, setConsultationMode] = useState<'ai' | 'whatsapp' | null>(null);
+  const [consultationMode, setConsultationMode] = useState<'telegram' | 'whatsapp' | null>(null);
   const [loading, setLoading] = useState(true);
 
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
 
   useEffect(() => {
@@ -202,14 +201,46 @@ function TeleconsultationContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
+  useEffect(() => {
+    const patientId = searchParams.get('patientId');
+    const mode = searchParams.get('mode');
+    
+    if (patientId && patients.length > 0) {
+      const patient = patients.find(p => p.id === patientId);
+      if (patient) {
+        setSelectedPatient(patient);
+      }
+    }
+    
+    if (mode === 'telegram' || mode === 'whatsapp') {
+      setConsultationMode(mode);
+    }
+  }, [searchParams, patients]);
+
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
     setConsultationMode(null); // Reset mode when patient changes
+    // Update URL parameter
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('patientId', patient.id);
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleModeSelect = (mode: 'telegram' | 'whatsapp') => {
+    setConsultationMode(mode);
+    // Update URL parameter
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('mode', mode);
+    router.push(`?${params.toString()}`);
   };
   
   const handleBackToSelection = () => {
-    setConsultationMode(null);
-  }
+     setConsultationMode(null);
+     // Update URL parameter
+     const params = new URLSearchParams(searchParams.toString());
+     params.delete('mode');
+     router.push(`?${params.toString()}`);
+   };
 
   const renderContent = () => {
     if (loading) {
@@ -226,14 +257,18 @@ function TeleconsultationContent() {
       );
     }
     
-    if (consultationMode === 'ai') {
-        return <TeleconsultChatbot patient={selectedPatient} onBack={handleBackToSelection} />;
+    if (consultationMode === 'telegram') {
+        return <TelegramConsultation patient={selectedPatient} onBack={handleBackToSelection} />;
+    }
+    
+    if (consultationMode === 'whatsapp') {
+        return <WhatsAppConsultation patient={selectedPatient} onBack={handleBackToSelection} />;
     }
 
     return (
       <ConsultationModeSelector
         patient={selectedPatient}
-        onModeSelect={setConsultationMode}
+        onModeSelect={handleModeSelect}
       />
     );
   };
