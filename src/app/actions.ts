@@ -283,5 +283,3 @@ export async function runTeleconsultChatbotAction(
   }
 }
 
-export type { ChatMessage };
-
