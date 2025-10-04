@@ -19,7 +19,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const generateId = (prefix: string): string => {
     // Use a combination of timestamp and random string to ensure uniqueness
     const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 11);
+    const randomStr = Math.random().toString(36).substr(2, 9);
     return `${prefix}-${timestamp}-${randomStr}`;
 };
 
@@ -59,20 +59,6 @@ export async function getPatientById(id: string): Promise<Patient | undefined> {
 
 export async function addPatient(data: PatientRegistrationData): Promise<string> {
     await delay(500);
-    
-    // Validate required fields
-    if (!data.name || !data.medicalRecordNumber) {
-        throw new Error("Name and medical record number are required");
-    }
-    
-    // Check for duplicate medical record number
-    const existingPatient = dummyPatients.find(p => 
-        p.medicalRecordNumber.toLowerCase() === data.medicalRecordNumber.toLowerCase()
-    );
-    if (existingPatient) {
-        throw new Error("Medical record number already exists");
-    }
-    
     const newId = generateId('patient');
     const newPatient: Patient = {
         id: newId,
