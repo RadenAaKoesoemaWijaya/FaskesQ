@@ -55,6 +55,12 @@ import {
     type TelegramMessage,
     type TelegramConsultationContext
 } from '@/ai/flows/telegram-chatbot-advanced-flow';
+import {
+    runTeleconsultChatbot,
+    type TeleconsultChatbotInput,
+    type TeleconsultChatbotOutput,
+    type ChatMessage
+} from '@/ai/flows/teleconsult-chatbot-flow';
 import { deletePatient as dbDeletePatient, updatePatient as dbUpdatePatient } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { sanitizeInput, validatePatientId, validateEmail, validatePhone, validateBpjsNumber, RateLimiter } from '@/lib/security';
@@ -257,4 +263,25 @@ export async function runTelegramChatbotAdvancedAction(
     };
   }
 }
+
+export async function runTeleconsultChatbotAction(
+  input: TeleconsultChatbotInput
+): Promise<{
+  success: boolean;
+  data?: TeleconsultChatbotOutput;
+  error?: string;
+}> {
+  try {
+    const result = await runTeleconsultChatbot(input);
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Error running teleconsult chatbot:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Terjadi kesalahan saat menjalankan konsultasi chatbot.' 
+    };
+  }
+}
+
+export type { ChatMessage };
 
