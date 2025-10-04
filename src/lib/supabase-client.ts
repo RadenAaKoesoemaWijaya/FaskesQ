@@ -1,6 +1,5 @@
 import type { Patient, PatientRegistrationData, Testimonial, TestimonialSubmissionData, ScreeningCluster, ScreeningQuestion, ScreeningResult } from './types';
 import { patients, testimonials, screeningClusters, screeningQuestions, examinations, screeningResults } from './placeholder-data';
-import { revalidatePath } from 'next/cache';
 
 // --- DATA DUMMY SECTION ---
 // All data operations will be performed on these in-memory arrays.
@@ -20,7 +19,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const generateId = (prefix: string): string => {
     // Use a combination of timestamp and random string to ensure uniqueness
     const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substr(2, 9);
+    const randomStr = Math.random().toString(36).substring(2, 11);
     return `${prefix}-${timestamp}-${randomStr}`;
 };
 
@@ -60,11 +59,24 @@ export async function getPatientById(id: string): Promise<Patient | undefined> {
 
 export async function addPatient(data: PatientRegistrationData): Promise<string> {
     await delay(500);
+    
+    // Validate required fields
+    if (!data.name || !data.medicalRecordNumber) {
+        throw new Error("Name and medical record number are required");
+    }
+    
+    // Check for duplicate medical record number
+    const existingPatient = dummyPatients.find(p => 
+        p.medicalRecordNumber.toLowerCase() === data.medicalRecordNumber.toLowerCase()
+    );
+    if (existingPatient) {
+        throw new Error("Medical record number already exists");
+    }
+    
     const newId = generateId('patient');
     const newPatient: Patient = {
         id: newId,
         ...data,
-        avatarUrl: `https://i.pravatar.cc/150?u=${newId}`,
         history: [],
         screeningHistory: [],
         created_at: new Date().toISOString(),
@@ -75,13 +87,14 @@ export async function addPatient(data: PatientRegistrationData): Promise<string>
 
 export async function updatePatient(id: string, data: Partial<PatientRegistrationData>): Promise<Patient> {
     await delay(500);
-    let patientToUpdate = dummyPatients.find(p => p.id === id);
-    if (!patientToUpdate) {
+    const patientIndex = dummyPatients.findIndex(p => p.id === id);
+    if (patientIndex === -1) {
         throw new Error("Patient not found");
     }
-    patientToUpdate = { ...patientToUpdate, ...data };
-    dummyPatients = dummyPatients.map(p => p.id === id ? patientToUpdate! : p);
-    return patientToUpdate;
+    
+    const updatedPatient = { ...dummyPatients[patientIndex], ...data };
+    dummyPatients[patientIndex] = updatedPatient;
+    return updatedPatient;
 }
 
 
@@ -106,6 +119,17 @@ export async function getTestimonials(): Promise<Testimonial[]> {
 
 export async function addTestimonial(data: TestimonialSubmissionData): Promise<Testimonial> {
     await delay(400);
+    
+    // Validate required fields
+    if (!data.patientName || !data.feedback) {
+        throw new Error("Patient name and feedback are required");
+    }
+    
+    // Validate rating range
+    if (data.rating < 1 || data.rating > 5) {
+        throw new Error("Rating must be between 1 and 5");
+    }
+    
     const newTestimonial: Testimonial = {
         id: generateId('testimonial'),
         ...data,
@@ -129,6 +153,12 @@ export async function getScreeningClusters(): Promise<ScreeningCluster[]> {
 
 export async function addScreeningCluster(data: Omit<ScreeningCluster, 'id' | 'questions' | 'created_at'>): Promise<ScreeningCluster> {
     await delay(200);
+    
+    // Validate required fields
+    if (!data.name) {
+        throw new Error("Cluster name is required");
+    }
+    
     const newCluster: ScreeningCluster = {
         id: generateId('cluster'),
         ...data,
@@ -154,10 +184,22 @@ export async function deleteScreeningCluster(id: string): Promise<void> {
 
 export async function addScreeningQuestion(clusterId: string, questionText: string): Promise<ScreeningQuestion> {
     await delay(150);
+    
+    // Validate inputs
+    if (!clusterId || !questionText?.trim()) {
+        throw new Error("Cluster ID and question text are required");
+    }
+    
+    // Check if cluster exists
+    const clusterExists = dummyScreeningClusters.some(c => c.id === clusterId);
+    if (!clusterExists) {
+        throw new Error("Cluster not found");
+    }
+    
     const newQuestion: ScreeningQuestion = {
         id: generateId('question'),
         cluster_id: clusterId,
-        text: questionText,
+        text: questionText.trim(),
         created_at: new Date().toISOString(),
     };
     dummyScreeningQuestions.push(newQuestion);
@@ -166,13 +208,14 @@ export async function addScreeningQuestion(clusterId: string, questionText: stri
 
 export async function updateScreeningQuestion(clusterId: string, questionId: string, questionText: string): Promise<ScreeningQuestion> {
     await delay(150);
-    let questionToUpdate = dummyScreeningQuestions.find(q => q.id === questionId && q.cluster_id === clusterId);
-    if (!questionToUpdate) {
+    const questionIndex = dummyScreeningQuestions.findIndex(q => q.id === questionId && q.cluster_id === clusterId);
+    if (questionIndex === -1) {
         throw new Error("Question not found");
     }
-    questionToUpdate.text = questionText;
-    dummyScreeningQuestions = dummyScreeningQuestions.map(q => q.id === questionId ? questionToUpdate! : q);
-    return questionToUpdate;
+    
+    const updatedQuestion = { ...dummyScreeningQuestions[questionIndex], text: questionText };
+    dummyScreeningQuestions[questionIndex] = updatedQuestion;
+    return updatedQuestion;
 }
 
 export async function deleteScreeningQuestion(clusterId: string, questionId: string): Promise<void> {
@@ -182,6 +225,30 @@ export async function deleteScreeningQuestion(clusterId: string, questionId: str
 
 export async function saveScreeningResult(patientId: string, result: Omit<ScreeningResult, 'id' | 'date' | 'created_at'>): Promise<void> {
     await delay(300);
+    
+    // Validate inputs
+    if (!patientId) {
+        throw new Error("Patient ID is required");
+    }
+    
+    // Check if patient exists
+    const patientExists = dummyPatients.some(p => p.id === patientId);
+    if (!patientExists) {
+        throw new Error("Patient not found");
+    }
+    
+    // Validate required result fields
+    if (!result.clusterName || !result.answers || result.answers.length === 0) {
+        throw new Error("Cluster name and answers are required");
+    }
+    
+    // Validate answers structure
+    for (const answer of result.answers) {
+        if (!answer.questionId || !answer.questionText || !answer.answer) {
+            throw new Error("Each answer must have questionId, questionText, and answer");
+        }
+    }
+    
     const newResult: ScreeningResult = {
         id: generateId('screening'),
         ...result,
@@ -190,4 +257,35 @@ export async function saveScreeningResult(patientId: string, result: Omit<Screen
         created_at: new Date().toISOString(),
     };
     dummyScreeningResults.push(newResult);
+}
+
+// --- UTILITY FUNCTIONS ---
+
+export async function resetDummyData(): Promise<void> {
+    await delay(100);
+    dummyPatients = [...patients];
+    dummyTestimonials = [...testimonials];
+    dummyScreeningClusters = [...screeningClusters];
+    dummyScreeningQuestions = [...screeningQuestions];
+    dummyExaminations = [...examinations];
+    dummyScreeningResults = [...screeningResults];
+}
+
+export async function getDataStats(): Promise<{
+    patients: number;
+    testimonials: number;
+    screeningClusters: number;
+    screeningQuestions: number;
+    examinations: number;
+    screeningResults: number;
+}> {
+    await delay(100);
+    return {
+        patients: dummyPatients.length,
+        testimonials: dummyTestimonials.length,
+        screeningClusters: dummyScreeningClusters.length,
+        screeningQuestions: dummyScreeningQuestions.length,
+        examinations: dummyExaminations.length,
+        screeningResults: dummyScreeningResults.length,
+    };
 }

@@ -1,5 +1,3 @@
-
-
 export type PatientRegistrationData = {
   name: string;
   dateOfBirth: string;
@@ -39,6 +37,9 @@ export type Patient = PatientRegistrationData & {
   history: Examination[];
   screeningHistory?: ScreeningResult[];
   allergies?: string[];
+  age?: number;
+  medicalHistory?: string[];
+  currentMedications?: string[];
   created_at: string;
 };
 
@@ -66,7 +67,6 @@ export type Testimonial = TestimonialSubmissionData & {
   date: string;
   created_at: string;
 };
-
 
 export type ScreeningCluster = {
     id: string;

@@ -1,4 +1,3 @@
-
 import type { Patient, PatientRegistrationData, Testimonial, TestimonialSubmissionData, ScreeningCluster, ScreeningQuestion, ScreeningResult, TopDisease } from './types';
 import { patients, testimonials, screeningClusters, screeningQuestions, examinations, screeningResults, diseaseStats } from './placeholder-data';
 
