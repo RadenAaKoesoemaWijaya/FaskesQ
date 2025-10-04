@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use } from 'react';
+import React from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getPatientById } from '@/lib/data';
@@ -30,7 +30,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { type MedicalScribeOutput } from '@/app/actions';
+import { type MedicalScribeOutput } from '@/ai/flows/medical-scribe-flow';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const diagnosisSchema = z.object({
@@ -475,7 +475,7 @@ function NewExaminationSection({ patient }: { patient: Patient }) {
     methods.setValue('heartAuscultation', exam.heartAuscultation);
     methods.setValue('abdomenInspection', exam.abdomenInspection);
     methods.setValue('abdomenPalpation', exam.abdomenPalpation);
-    methods.setValue('abdomenPercussion', exam.abdomenAuscultation);
+    methods.setValue('abdomenPercussion', exam.abdomenPercussion);
     methods.setValue('abdomenAuscultation', exam.abdomenAuscultation);
     methods.setValue('extremities', exam.extremities);
     methods.setValue('neurological', exam.neurological);
@@ -653,12 +653,10 @@ function PatientDetailPageContent({ id }: { id: string }) {
 }
 
 
-export default function PatientDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const { id } = use(params);
+export default function PatientDetailPage() {
+  const params = useParams();
+  const id = params?.id as string;
+  
   if (!id) {
     notFound();
   }
