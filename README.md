@@ -1,32 +1,75 @@
 # FaskesQ
 
-**Purpose:**
+**Tujuan:**
 
-FaskesQ is a medical application designed to streamline various aspects of patient management and medical documentation for healthcare professionals. It provides tools for patient registration, anamnesis, physical exams, supporting exams, diagnosis, therapy suggestions, and medical scribe functionality. The application also supports teleconsultation and allows for managing patient testimonials.
+FaskesQ adalah aplikasi medis yang dirancang untuk mempermudah berbagai aspek manajemen pasien dan dokumentasi medis bagi para profesional kesehatan. Aplikasi ini menyediakan alat-alat untuk pendaftaran pasien, anamnesis, pemeriksaan fisik, pemeriksaan penunjang, diagnosis, saran terapi, dan fungsi medical scribe. Aplikasi ini juga mendukung telekonsultasi dan memungkinkan pengelolaan testimoni pasien.
 
-**Detailed Usage:**
+**Fitur Utama dan Cara Penggunaan:**
 
-FaskesQ offers the following key features and workflows:
+FaskesQ menawarkan fitur-fitur utama dan alur kerja berikut:
 
-* **Patient Management:** Register new patients and manage existing patient records. Each patient record includes details such as anamnesis, physical exam findings, supporting exam results, diagnosis, and therapy.
-    * **Registering a New Patient:** Use the patient registration form (`src/components/patient-registration-form.tsx`) to create a new patient entry.
-    * **Viewing/Editing Patient Records:** Access individual patient records to view and modify medical information. The patient detail page (`src/app/patients/[id]/page.tsx`) displays all associated medical forms.
-* **Medical Documentation:** The application provides dedicated forms for capturing comprehensive medical information:
-    * **Anamnesis:** Record patient history using the anamnesis form (`src/components/anamnesis-form.tsx`).
-    * **Physical Exam:** Document findings from physical examinations using the physical exam form (`src/components/physical-exam-form.tsx`).
-    * **Supporting Exams:** Input results from laboratory tests, imaging, and other supporting examinations using the supporting exam form (`src/components/supporting-exam-form.tsx`).
-    * **Diagnosis:** Record the patient's diagnosis using the diagnosis form (`src/components/diagnosis-form.tsx`).
-    * **Therapy:** Document the prescribed treatment plan using the therapy form (`src/components/therapy-form.tsx`).
-* **Medical Scribe:** Utilize the medical scribe feature (`src/components/medical-scribe.tsx`) to assist with generating and completing medical records. This feature likely leverages AI capabilities to streamline documentation.
-* **AI-Powered Assistance:** FaskesQ integrates AI workflows to provide intelligent support:
-    * **Complete Medical Resume:** Generate a comprehensive medical resume based on the captured patient data (`src/ai/flows/complete-medical-resume.ts`).
-    * **Medical Scribe Flow:** Facilitate the medical scribe functionality through an AI-driven flow (`src/ai/flows/medical-scribe-flow.ts`).
-    * **Suggest Treatment:** Receive AI-powered suggestions for treatment plans based on diagnosis and patient data (`src/ai/flows/suggest-treatment.ts`).
-* **Teleconsultation:** Conduct remote medical consultations through the teleconsultation feature (`src/app/teleconsultation/page.tsx`).
-* **Testimonials:** Manage patient testimonials (`src/app/testimonials/page.tsx`, `src/app/testimonials/new/page.tsx`, `src/components/testimonial-form.tsx`) to collect feedback and showcase patient experiences.
-* **User Profile:** Access and manage user profile information (`src/app/profile/page.tsx`).
-* **Navigation:** The main navigation component (`src/components/main-nav.tsx`) allows users to easily navigate between different sections of the application.
+* **Manajemen Pasien:** Mendaftarkan pasien baru dan mengelola catatan pasien yang ada. Setiap catatan pasien mencakup detail seperti anamnesis, temuan pemeriksaan fisik, hasil pemeriksaan penunjang, diagnosis, dan terapi.
+    * **Mendaftarkan Pasien Baru:** Gunakan formulir pendaftaran pasien (`src/components/patient-registration-form.tsx`) untuk membuat entri pasien baru.
+    * **Melihat/Mengedit Catatan Pasien:** Akses catatan pasien individu untuk melihat dan memodifikasi informasi medis. Halaman detail pasien (`src/app/patients/[id]/page.tsx`) menampilkan semua formulir medis yang terkait.
+* **Dokumentasi Medis:** Aplikasi ini menyediakan formulir khusus untuk menangkap informasi medis yang komprehensif:
+    * **Anamnesis:** Mencatat riwayat pasien menggunakan formulir anamnesis (`src/components/anamnesis-form.tsx`).
+    * **Pemeriksaan Fisik:** Mendokumentasikan temuan dari pemeriksaan fisik menggunakan formulir pemeriksaan fisik (`src/components/physical-exam-form.tsx`).
+    * **Pemeriksaan Penunjang:** Memasukkan hasil dari tes laboratorium, pencitraan, dan pemeriksaan penunjang lainnya menggunakan formulir pemeriksaan penunjang (`src/components/supporting-exam-form.tsx`).
+    * **Diagnosis:** Mencatat diagnosis pasien menggunakan formulir diagnosis (`src/components/diagnosis-form.tsx`).
+    * **Terapi:** Mendokumentasikan rencana pengobatan yang diresepkan menggunakan formulir terapi (`src/components/therapy-form.tsx`).
+* **Medical Scribe:** Memanfaatkan fitur medical scribe (`src/components/medical-scribe.tsx`) untuk membantu menghasilkan dan melengkapi catatan medis. Fitur ini memanfaatkan kemampuan AI untuk memperlancar dokumentasi.
+* **Bantuan Berbasis AI:** FaskesQ mengintegrasikan alur kerja AI untuk memberikan dukungan cerdas:
+    * **Lengkapi Resume Medis:** Menghasilkan resume medis yang komprehensif berdasarkan data pasien yang ditangkap (`src/ai/flows/complete-medical-resume.ts`).
+    * **Alur Medical Scribe:** Memfasilitasi fungsi medical scribe melalui alur yang digerakkan AI (`src/ai/flows/medical-scribe-flow.ts`).
+    * **Sarankan Pengobatan:** Menerima saran perawatan yang didukung AI berdasarkan diagnosis dan data pasien (`src/ai/flows/suggest-treatment.ts`).
+* **Telekonsultasi:** Melakukan konsultasi medis jarak jauh melalui fitur telekonsultasi (`src/app/teleconsultation/page.tsx`).
+* **Testimoni:** Mengelola testimoni pasien (`src/app/testimonials/page.tsx`, `src/app/testimonials/new/page.tsx`, `src/components/testimonial-form.tsx`) untuk mengumpulkan umpan balik dan memamerkan pengalaman pasien.
+* **Profil Pengguna:** Mengakses dan mengelola informasi profil pengguna (`src/app/profile/page.tsx`).
+* **Navigasi:** Komponen navigasi utama (`src/components/main-nav.tsx`) memungkinkan pengguna dengan mudah bernavigasi antara berbagai bagian aplikasi.
 
-**Getting Started:**
+## Fitur-Fitur Baru dan Diperbarui
 
-To begin using FaskesQ, you can start by registering a new patient or exploring the different medical documentation forms. The application's interface is designed to be intuitive for healthcare professionals. Further details on specific workflows and AI feature usage can be found within the application itself.
+### 💬 Fitur Chatbot dan Konsultasi
+* **Telegram Chatbot Advanced** (`src/components/telegram-chatbot-advanced.tsx`): Chatbot canggih untuk konsultasi medis melalui Telegram dengan fitur:
+  - Pengenalan suara dan transkripsi
+  - Riwayat percakapan yang dapat disalin
+  - Sistem pertanyaan cepat
+  - Integrasi dengan WhatsApp untuk melanjutkan konsultasi
+
+* **WhatsApp Chatbot Advanced** (`src/components/whatsapp-chatbot-advanced.tsx`): Chatbot untuk konsultasi medis melalui WhatsApp dengan fitur:
+  - Perekaman suara otomatis
+  - Transkripsi audio ke teks
+  - Riwayat pesan yang dapat disalin
+  - Tombol cepan untuk pertanyaan umum
+
+* **Telegram Consultation** (`src/components/telegram-consultation.tsx`): Antarmuka konsultasi Telegram dengan dukungan:
+  - Input teks dan suara
+  - Riwayat percakapan yang terorganisir
+  - Integrasi dengan sistem manajemen pasien
+
+* **WhatsApp Consultation** (`src/components/whatsapp-consultation.tsx`): Antarmuka konsultasi WhatsApp dengan fitur:
+  - Perekaman suara dengan transkripsi
+  - Riwayat pesan yang dapat disalin
+  - Integrasi dengan kontak pasien
+
+### 🔒 Peningkatan Keamanan dan Stabilitas
+* **Validasi Input**: Semua formulir sekarang memiliki validasi input yang ketat untuk mencegah data tidak valid
+* **Error Handling**: Peningkatan penanganan error dengan pesan yang informatif
+* **Type Safety**: Peningkatan type safety di seluruh aplikasi untuk mencegah bug runtime
+* **Memory Management**: Perbaikan manajemen memori untuk mencegah kebocoran memori
+
+### 🛠️ Utilitas dan Alat Bantu Baru
+* **Reset Data** (`src/lib/supabase-client.ts`): Fungsi untuk mereset data dummy ke kondisi awal
+* **Statistik Data** (`src/lib/supabase-client.ts`): Fungsi untuk melihat statistik penggunaan data
+* **Validasi Clipboard**: Pemeriksaan keamanan untuk API clipboard di berbagai browser
+
+**Cara Memulai:**
+
+Untuk mulai menggunakan FaskesQ, Anda dapat memulai dengan mendaftarkan pasien baru atau menjelajahi berbagai formulir dokumentasi medis. Antarmuka aplikasi dirancang agar intuitif bagi profesional kesehatan. Detail lebih lanjut tentang alur kerja tertentu dan penggunaan fitur AI dapat ditemukan dalam aplikasi itu sendiri.
+
+**Tips Penggunaan:**
+1. Gunakan fitur chatbot untuk konsultasi cepat dengan pasien
+2. Manfaatkan fitur transkripsi suara untuk dokumentasi yang lebih cepat
+3. Gunakan validasi input untuk memastikan data yang akurat
+4. Gunakan fitur reset data jika ingin menguji aplikasi dari awal
+5. Integrasikan dengan WhatsApp dan Telegram untuk komunikasi yang lebih luas
