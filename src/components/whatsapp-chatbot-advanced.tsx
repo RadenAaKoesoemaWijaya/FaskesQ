@@ -30,7 +30,8 @@ import {
   Calendar,
   Heart
 } from 'lucide-react';
-import { runWhatsAppChatbotAdvancedAction, type WhatsAppMessage } from '@/app/actions';
+import { runWhatsAppChatbotAdvancedAction } from '@/app/actions';
+import type { WhatsAppMessage } from '@/ai/flows/whatsapp-chatbot-advanced-flow';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -66,9 +67,7 @@ export function WhatsAppChatbotAdvanced({ patient, onBack }: WhatsAppChatbotAdva
   });
   const [showTemplates, setShowTemplates] = useState(false);
   const [showContextPanel, setShowContextPanel] = useState(false);
-  const [recordingTranscript, setRecordingTranscript] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -199,10 +198,7 @@ export function WhatsAppChatbotAdvanced({ patient, onBack }: WhatsAppChatbotAdva
           setConsultationContext(result.data.context);
         }
 
-        // Update suggested questions jika ada
-        if (result.data.suggestions) {
-          setSuggestedQuestions(result.data.suggestions);
-        }
+
       } else {
         // Tambahkan pesan error
         const errorMessage: WhatsAppMessage = {
@@ -248,12 +244,35 @@ export function WhatsAppChatbotAdvanced({ patient, onBack }: WhatsAppChatbotAdva
   };
 
   // Copy message to clipboard
-  const copyMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
-    toast({
-      title: 'Tersalin',
-      description: 'Pesan telah disalin ke clipboard',
-    });
+  const copyMessage = async (content: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(content);
+        toast({
+          title: 'Tersalin',
+          description: 'Pesan telah disalin ke clipboard',
+        });
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = content;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        toast({
+          title: 'Tersalin',
+          description: 'Pesan telah disalin ke clipboard',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to copy text:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyalin',
+        description: 'Tidak dapat menyalin teks ke clipboard',
+      });
+    }
   };
 
   // Export conversation
@@ -275,12 +294,36 @@ export function WhatsAppChatbotAdvanced({ patient, onBack }: WhatsAppChatbotAdva
 
   // Send to WhatsApp
   const sendToWhatsApp = () => {
+    if (!patient?.contact) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Nomor kontak pasien tidak tersedia',
+      });
+      return;
+    }
+    
+    if (messages.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Tidak ada pesan untuk dikirim',
+      });
+      return;
+    }
+    
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.role === 'user') {
       const phoneNumber = patient.contact.replace(/\D/g, '').replace(/^08/, '628');
       const message = encodeURIComponent(lastMessage.content);
       const url = `https://wa.me/${phoneNumber}?text=${message}`;
       window.open(url, '_blank');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Tidak ada pesan dari dokter untuk dikirim',
+      });
     }
   };
 

@@ -28,7 +28,8 @@ import { addPatient, updatePatient } from '@/lib/data';
 import { useState } from 'react';
 import { Loader2, BadgeCheck, CircleAlert } from 'lucide-react';
 import { Patient } from '@/lib/types';
-import { runVerifyBpjs, type VerifyBpjsOutput } from '@/app/actions';
+import { runVerifyBpjs } from '@/app/actions';
+import type { VerifyBpjsOutput } from '@/ai/flows/bpjs-verification-flow';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const formSchema = z.object({

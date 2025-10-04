@@ -26,11 +26,49 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import type { SuggestIcd10Output, SuggestDifferentialDiagnosisOutput } from '@/app/actions';
+import type { SuggestIcd10Output } from '@/ai/flows/suggest-icd10-flow';
+import type { SuggestDifferentialDiagnosisOutput } from '@/ai/flows/suggest-differential-diagnosis';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 
-function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient: Patient, referralData: any, medicalResume: string }) {
+// Type definitions for form values
+interface DiagnosisItem {
+  value: string;
+}
+
+interface ReferralData {
+  isReferred: boolean;
+  facility?: string;
+  reason?: string;
+}
+
+interface FormValues {
+  diagnoses: DiagnosisItem[];
+  mainComplaint: string;
+  presentIllness: string;
+  pastMedicalHistory: string;
+  drugAllergy: string;
+  consciousness: string;
+  bloodPressure: string;
+  heartRate: string;
+  respiratoryRate: string;
+  temperature: string;
+  eyes: string;
+  nose: string;
+  mouth: string;
+  lungsAuscultation: string;
+  heartAuscultation: string;
+  abdomenAuscultation: string;
+  prognosis: string;
+  patientEducation: string;
+  referral: ReferralData;
+}
+
+function ReferralPrintLayout({ patient, referralData, medicalResume }: { 
+  patient: Patient, 
+  referralData: ReferralData, 
+  medicalResume: string 
+}) {
     const today = new Date().toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'long',
@@ -97,7 +135,7 @@ function ReferralPrintLayout({ patient, referralData, medicalResume }: { patient
 }
 
 export function DiagnosisForm({ patient }: { patient: Patient }) {
-  const { control, getValues, watch, setValue, formState: { errors } } = useFormContext();
+  const { control, getValues, watch, setValue, formState: { errors } } = useFormContext<FormValues>();
   const { toast } = useToast();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -166,6 +204,7 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
     try {
         const values = getValues();
         const anamnesis = `Keluhan Utama: ${values.mainComplaint}. Riwayat Sekarang: ${values.presentIllness}. Riwayat Dahulu: ${values.pastMedicalHistory}. Alergi: ${values.drugAllergy}.`;
+        const physicalExamination = `Kesadaran: ${values.consciousness}, TD: ${values.bloodPressure}, Nadi: ${values.heartRate}, RR: ${values.respiratoryRate}, Suhu: ${values.temperature}.`;
         const physicalExam = `Kesadaran: ${values.consciousness}, TD: ${values.bloodPressure}, Nadi: ${values.heartRate}, RR: ${values.respiratoryRate}, Suhu: ${values.temperature}. Temuan lain: ${values.eyes}, ${values.nose}, ${values.mouth}, ${values.lungsAuscultation}, ${values.heartAuscultation}, ${values.abdomenAuscultation}`;
         
         if (!values.mainComplaint) {
@@ -198,60 +237,75 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
   
   const handleAddDiagnosisFromAi = (diagnosis: string) => {
     // If first diagnosis is empty, set it. Otherwise, append.
-    const diagnoses = getValues('diagnoses');
-    if (diagnoses.length === 1 && !diagnoses[0].value) {
-        setValue('diagnoses.0.value', diagnosis);
+    const currentDiagnoses = getValues('diagnoses') as { value: string }[];
+    if (currentDiagnoses.length === 0 || !currentDiagnoses[0].value) {
+      setValue('diagnoses.0.value', diagnosis);
     } else {
-        append({ value: diagnosis });
+      append({ value: diagnosis });
     }
-    toast({
-        title: "Diagnosis Ditambahkan",
-        description: `"${diagnosis}" telah ditambahkan ke daftar.`,
-    });
-  }
+  };
 
   const handlePrintReferral = async () => {
     setIsPrinting(true);
     try {
-        const formData = getValues();
-        const diagnosisText = formData.diagnoses.map((d: {value: string}) => d.value).join(', ');
+      const values = getValues();
+      const anamnesis = `Keluhan Utama: ${values.mainComplaint}. Riwayat Sekarang: ${values.presentIllness}. Riwayat Dahulu: ${values.pastMedicalHistory}. Alergi: ${values.drugAllergy}.`;
+      const physicalExam = `Kesadaran: ${values.consciousness}, TD: ${values.bloodPressure}, Nadi: ${values.heartRate}, RR: ${values.respiratoryRate}, Suhu: ${values.temperature}. Temuan lain: ${values.eyes}, ${values.nose}, ${values.mouth}, ${values.lungsAuscultation}, ${values.heartAuscultation}, ${values.abdomenAuscultation}`;
+      
+      const resumeResult = await getMedicalResume({
+        anamnesis,
+        physicalExamination: physicalExam,
+        diagnosis: values.diagnoses.map((d: { value: string }) => d.value).join(', '),
+        supportingExaminations: "Hasil penunjang terlampir jika ada.",
+        prescriptionsAndActions: values.patientEducation || '',
+      });
 
-        const input = {
-            anamnesis: `Keluhan Utama: ${formData.mainComplaint}. Riwayat Sekarang: ${formData.presentIllness}. Riwayat Dahulu: ${formData.pastMedicalHistory}. Alergi: ${formData.drugAllergy}.`,
-            physicalExamination: `Kesadaran: ${formData.consciousness}, TD: ${formData.bloodPressure}, Nadi: ${formData.heartRate}, RR: ${formData.respiratoryRate}, Suhu: ${formData.temperature}.`,
-            supportingExaminations: "Hasil penunjang terlampir jika ada.",
-            diagnosis: diagnosisText,
-            prescriptionsAndActions: "Terapi dan tindakan terlampir.",
-        };
-        const result = await getMedicalResume(input);
-        if (result.success && result.data) {
-            setMedicalResume(result.data.medicalResume);
-            // Wait for state to update before printing
-            setTimeout(() => {
-                 const printContents = document.getElementById('printable-referral-area')?.innerHTML;
-                 const originalContents = document.body.innerHTML;
-                 if (printContents) {
-                    document.body.innerHTML = printContents;
-                    window.print();
-                    document.body.innerHTML = originalContents;
-                    // It's a bit of a hack, but we need to re-attach the event listeners for our app to work after printing
-                    window.location.reload();
-                 }
-            }, 500);
-
-        } else {
-            throw new Error(result.error || "Gagal membuat resume medis.");
-        }
-    } catch (error: any) {
+      if (resumeResult.success && resumeResult.data) {
+        setMedicalResume(resumeResult.data.medicalResume);
+        
+        // Print after a short delay to ensure state is updated
+        setTimeout(() => {
+          const printContent = document.getElementById('printable-referral-area');
+          if (printContent) {
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+              printWindow.document.write(`
+                <html>
+                  <head>
+                    <title>Surat Rujukan - ${patient.name}</title>
+                    <style>
+                      body { font-family: Arial, sans-serif; margin: 20px; }
+                      .hidden { display: none; }
+                    </style>
+                  </head>
+                  <body>
+                    ${printContent.innerHTML}
+                  </body>
+                </html>
+              `);
+              printWindow.document.close();
+              printWindow.print();
+            }
+          }
+        }, 100);
+      } else {
         toast({
-            variant: "destructive",
-            title: "Gagal Mencetak Rujukan",
-            description: error.message,
+          variant: "destructive",
+          title: "Gagal Membuat Resume",
+          description: resumeResult.error || "Gagal membuat resume medis.",
         });
+      }
+    } catch (error) {
+      console.error('Error printing referral:', error);
+      toast({
+        variant: "destructive",
+        title: "Gagal Mencetak",
+        description: "Terjadi kesalahan saat mencetak surat rujukan.",
+      });
     } finally {
-        setIsPrinting(false);
+      setIsPrinting(false);
     }
-  }
+  };
 
 
   return (
@@ -458,7 +512,7 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
                         </div>
                     ) : icdSuggestions.length > 0 ? (
                         <div className="space-y-2">
-                            {icdSuggestions.map((suggestion, index) => (
+                            {icdSuggestions.map((suggestion: {code: string, description: string}, index: number) => (
                                 <button
                                     key={index}
                                     onClick={() => handleSelectIcd(suggestion)}
