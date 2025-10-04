@@ -21,7 +21,7 @@ function EditPatientPageContent() {
         }
         async function loadPatient() {
             setLoading(true);
-            const fetchedPatient = await getPatientById(id);
+            const fetchedPatient = await getPatientById(id as string);
             if (fetchedPatient) {
                 setPatient(fetchedPatient);
             } else {
