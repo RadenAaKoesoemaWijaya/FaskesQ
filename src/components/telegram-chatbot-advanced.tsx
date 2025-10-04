@@ -10,14 +10,18 @@ import {
   Send, 
   Bot, 
   User, 
+  Stethoscope, 
   Clock,
+  AlertTriangle,
+  CheckCircle,
+  MessageSquare,
   X,
   Mars,
   Venus
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { runTelegramChatbotAdvancedAction } from '@/app/actions';
-import type { TelegramMessage } from '@/ai/flows/telegram-chatbot-advanced-flow';
+import type { TelegramMessage, TelegramConsultationContext } from '@/ai/flows/telegram-chatbot-advanced-flow';
 import type { Patient } from '@/lib/types';
 
 interface TelegramChatbotAdvancedProps {
@@ -29,7 +33,12 @@ interface TelegramChatbotAdvancedProps {
     timestamp: Date;
     phoneNumber?: string;
   }>;
-  consultationContext: ConsultationContext;
+  consultationContext: {
+    symptoms: string[];
+    diagnosis: string;
+    treatment: string;
+    notes: string;
+  };
   onChatbotResponse: (response: string) => void;
   onClose?: () => void;
 }
@@ -41,48 +50,35 @@ interface MessageTemplate {
   content: string;
 }
 
-const MESSAGE_TEMPLATES: MessageTemplate[] = [
-  { id: '1', name: 'Salam Awal', category: 'umum', content: 'Halo {patientName}, saya {doctorName} akan membantu konsultasi Anda hari ini.' },
-  { id: '2', name: 'Tanya Gejala', category: 'gejala', content: 'Bisa jelaskan gejala yang Anda rasakan saat ini {patientName}?' },
-  { id: '3', name: 'Saran Istirahat', category: 'saran', content: 'Saya sarankan {patientName} untuk istirahat yang cukup dan minum obat secara teratur.' },
-  { id: '4', name: 'Jadwal Kontrol', category: 'kontrol', content: 'Jangan lupa kontrol kembali sesuai jadwal ya {patientName}.' }
-];
-
 interface ConsultationContext {
-  patientName: string;
-  age: number;
-  gender: 'male' | 'female';
   symptoms: string[];
-  medicalHistory: string[];
-  currentMedications: string[];
-  allergies: string[];
-  vitals: {
-    bloodPressure?: string;
-    heartRate?: number;
-    temperature?: number;
-    respiratoryRate?: number;
-    oxygenSaturation?: number;
-  };
-  consultationNotes: string[];
+  diagnosis: string;
+  treatment: string;
+  notes: string;
 }
 
-export function TelegramChatbotAdvanced({ patient, consultationContext: initialContext, onChatbotResponse, onClose }: TelegramChatbotAdvancedProps) {
+export function TelegramChatbotAdvanced({ patient, messages: parentMessages, consultationContext: initialContext, onChatbotResponse, onClose }: TelegramChatbotAdvancedProps) {
   const [messages, setMessages] = useState<TelegramMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [consultationMode, setConsultationMode] = useState<'general' | 'emergency' | 'follow-up' | 'medication'>('general');
-  const [consultationContext, setConsultationContext] = useState(initialContext);
+  const [consultationContext, setConsultationContext] = useState<TelegramConsultationContext>(() => ({
+    patientName: patient.name,
+    age: new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear(),
+    gender: patient.gender === 'Pria' ? 'male' : patient.gender === 'Wanita' ? 'female' : 'male',
+    symptoms: initialContext.symptoms,
+    medicalHistory: patient.history?.map(exam => exam.diagnosis) || [],
+    currentMedications: patient.currentMedications || [],
+    allergies: patient.allergies || [],
+    vitals: {},
+    consultationNotes: initialContext.notes ? [initialContext.notes] : []
+  }));
   const [showTemplates, setShowTemplates] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Initialize conversation with system message
   useEffect(() => {
-    if (!patient?.contact) {
-      console.error('Patient contact is required');
-      return;
-    }
-
     const systemMessage: TelegramMessage = {
       id: 'system-1',
       role: 'system',
@@ -91,7 +87,7 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
       phoneNumber: patient.contact,
     };
     setMessages([systemMessage]);
-  }, [patient?.contact]);
+  }, [patient.contact]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -102,16 +98,6 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-
-    // Validate patient data
-    if (!patient?.contact) {
-      toast({
-        title: 'Error',
-        description: 'Data pasien tidak lengkap',
-        variant: 'destructive'
-      });
-      return;
-    }
 
     const userMessage: TelegramMessage = {
       id: Date.now().toString(),
@@ -144,27 +130,14 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
 
         setMessages(prev => [...prev, botMessage]);
         onChatbotResponse(result.data.response);
-      } else {
-        throw new Error(result.error || 'Gagal mendapatkan respons dari AI');
       }
     } catch (error) {
       console.error('Error in chatbot:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat memproses chatbot';
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: 'Terjadi kesalahan saat memproses chatbot',
         variant: 'destructive'
       });
-      
-      // Add error message to chat
-      const errorBotMessage: TelegramMessage = {
-        id: (Date.now() + 2).toString(),
-        role: 'assistant',
-        content: 'Maaf, terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi.',
-        timestamp: new Date(),
-        phoneNumber: patient.contact,
-      };
-      setMessages(prev => [...prev, errorBotMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -182,35 +155,12 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
   };
 
   // Fungsi untuk copy pesan
-  const copyMessage = async (content: string) => {
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(content);
-        toast({
-          title: 'Berhasil',
-          description: 'Pesan telah disalin ke clipboard'
-        });
-      } else {
-        // Fallback for older browsers or non-secure contexts
-        const textArea = document.createElement('textarea');
-        textArea.value = content;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        toast({
-          title: 'Berhasil',
-          description: 'Pesan telah disalin ke clipboard'
-        });
-      }
-    } catch (error) {
-      console.error('Failed to copy message:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal menyalin pesan ke clipboard',
-        variant: 'destructive'
-      });
-    }
+  const copyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast({
+      title: 'Berhasil',
+      description: 'Pesan telah disalin ke clipboard'
+    });
   };
 
   // Fungsi untuk export transkrip
@@ -245,7 +195,7 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
   };
 
   // Fungsi untuk update konteks
-  const updateContext = <K extends keyof ConsultationContext>(field: K, value: ConsultationContext[K]) => {
+  const updateContext = (field: keyof TelegramConsultationContext, value: any) => {
     setConsultationContext(prev => ({
       ...prev,
       [field]: value
@@ -270,43 +220,7 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
     }));
   };
 
-  // Fungsi untuk menambahkan riwayat medis
-  const addMedicalHistory = (history: string) => {
-    if (history.trim() && !consultationContext.medicalHistory.includes(history.trim())) {
-      setConsultationContext(prev => ({
-        ...prev,
-        medicalHistory: [...prev.medicalHistory, history.trim()]
-      }));
-    }
-  };
-
-  // Fungsi untuk menghapus riwayat medis
-  const removeMedicalHistory = (history: string) => {
-    setConsultationContext(prev => ({
-      ...prev,
-      medicalHistory: prev.medicalHistory.filter(h => h !== history)
-    }));
-  };
-
-  // Fungsi untuk menambahkan alergi
-  const addAllergy = (allergy: string) => {
-    if (allergy.trim() && !consultationContext.allergies.includes(allergy.trim())) {
-      setConsultationContext(prev => ({
-        ...prev,
-        allergies: [...prev.allergies, allergy.trim()]
-      }));
-    }
-  };
-
-  // Fungsi untuk menghapus alergi
-  const removeAllergy = (allergy: string) => {
-    setConsultationContext(prev => ({
-      ...prev,
-      allergies: prev.allergies.filter(a => a !== allergy)
-    }));
-  };
-
-
+  const GenderIcon = patient.gender === 'Pria' ? Mars : patient.gender === 'Wanita' ? Venus : User;
 
   return (
     <Card className="h-[600px] flex flex-col">
@@ -335,9 +249,8 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
             <span className="text-sm font-medium">Mode:</span>
             <select
               value={consultationMode}
-              onChange={(e) => setConsultationMode(e.target.value as 'general' | 'emergency' | 'follow-up' | 'medication')}
+              onChange={(e) => setConsultationMode(e.target.value as any)}
               className="text-sm border rounded px-2 py-1"
-              aria-label="Mode konsultasi"
             >
               <option value="general">Umum</option>
               <option value="emergency">Darurat</option>
@@ -429,7 +342,12 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
             <div className="mb-3 p-3 bg-muted rounded-lg">
               <h4 className="text-sm font-medium mb-2">Template Pesan</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {MESSAGE_TEMPLATES.map((template) => (
+                {[
+                  { id: '1', name: 'Salam Awal', category: 'umum', content: 'Halo {patientName}, saya {doctorName} akan membantu konsultasi Anda hari ini.' },
+                  { id: '2', name: 'Tanya Gejala', category: 'gejala', content: 'Bisa jelaskan gejala yang Anda rasakan saat ini {patientName}?' },
+                  { id: '3', name: 'Saran Istirahat', category: 'saran', content: 'Saya sarankan {patientName} untuk istirahat yang cukup dan minum obat secara teratur.' },
+                  { id: '4', name: 'Jadwal Kontrol', category: 'kontrol', content: 'Jangan lupa kontrol kembali sesuai jadwal ya {patientName}.' }
+                ].map((template) => (
                   <Button
                     key={template.id}
                     variant="ghost"
@@ -452,8 +370,6 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
               onChange={(e) => setInput(e.target.value)}
               className="min-h-[60px] max-h-[120px]"
               rows={2}
-              aria-label="Pesan untuk AI"
-              disabled={isLoading}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -461,12 +377,7 @@ export function TelegramChatbotAdvanced({ patient, consultationContext: initialC
                 }
               }}
             />
-            <Button 
-              type="submit" 
-              disabled={isLoading || !input.trim()} 
-              className="px-3"
-              aria-label="Kirim pesan"
-            >
+            <Button type="submit" disabled={isLoading || !input.trim()} className="px-3">
               {isLoading ? (
                 <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (

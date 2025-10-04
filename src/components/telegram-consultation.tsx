@@ -394,15 +394,10 @@ export function TelegramConsultation({ patient, onBack }: TelegramConsultationPr
           messages={messages}
           onChatbotResponse={handleChatbotResponse}
           consultationContext={{
-            patientName: patient.name,
-            age: patient.age || 0,
-            gender: patient.gender === 'Pria' ? 'male' : 'female',
             symptoms: extractSymptomsFromMessages(),
-            medicalHistory: patient.medicalHistory || [],
-            currentMedications: patient.currentMedications || [],
-            allergies: patient.allergies || [],
-            vitals: {},
-            consultationNotes: []
+            diagnosis: '',
+            treatment: '',
+            notes: ''
           }}
         />
       )}

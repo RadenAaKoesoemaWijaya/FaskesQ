@@ -16,7 +16,9 @@ import {
   Clock,
   Download,
   Send,
-  Bot
+  Bot,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface WhatsAppConsultationProps {
@@ -42,10 +44,8 @@ export function WhatsAppConsultation({ patient, onBack }: WhatsAppConsultationPr
   const [useAdvancedChatbot, setUseAdvancedChatbot] = useState(false);
   
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Format nomor WhatsApp
   const formatPhoneNumber = (contact: string) => {
@@ -77,9 +77,6 @@ export function WhatsAppConsultation({ patient, onBack }: WhatsAppConsultationPr
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
     };
   }, [isRecording]);
 
@@ -105,42 +102,26 @@ export function WhatsAppConsultation({ patient, onBack }: WhatsAppConsultationPr
       };
 
       mediaRecorder.onstop = async () => {
-        try {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-          await transcribeAudio(audioBlob);
-        } catch (error) {
-          console.error('Error processing audio:', error);
-        } finally {
-          // Always clean up the stream
-          stream.getTracks().forEach(track => track.stop());
-        }
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        await transcribeAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
-      
-      // Start recording timer
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('Gagal memulai perekaman. Pastikan mikrofon diizinkan.');
     }
   };
 
-  // Hentikan perekaman
+  // Stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      
-      // Clear recording timer
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-        recordingTimerRef.current = null;
-      }
+      setRecordingTime(0);
     }
   };
 
@@ -201,30 +182,6 @@ export function WhatsAppConsultation({ patient, onBack }: WhatsAppConsultationPr
     }
   };
 
-  // Copy pesan ke clipboard
-  const copyToClipboard = async (text: string) => {
-    try {
-      // Check if clipboard API is available
-      if (!navigator.clipboard) {
-        // Fallback for older browsers or non-secure contexts
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        alert('Pesan disalin ke clipboard!');
-        return;
-      }
-      
-      await navigator.clipboard.writeText(text);
-      alert('Pesan disalin ke clipboard!');
-    } catch (error) {
-      console.error('Gagal menyalin:', error);
-      alert('Gagal menyalin pesan');
-    }
-  };
-
   // Export transkrip
   const exportTranscript = () => {
     if (transcript.length === 0) {
@@ -249,11 +206,6 @@ export function WhatsAppConsultation({ patient, onBack }: WhatsAppConsultationPr
 
   // Buka WhatsApp
   const openWhatsApp = () => {
-    if (!patient?.contact) {
-      alert('Nomor kontak pasien tidak tersedia');
-      return;
-    }
-    
     const message = encodeURIComponent(`Halo ${patient.name}, ini adalah pesan dari FaskesQ.`);
     const url = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(url, '_blank');
