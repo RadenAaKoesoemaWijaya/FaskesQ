@@ -57,6 +57,7 @@ import {
 } from '@/ai/flows/telegram-chatbot-advanced-flow';
 import { deletePatient as dbDeletePatient, updatePatient as dbUpdatePatient } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
+import { sanitizeInput, validatePatientId, validateEmail, validatePhone, validateBpjsNumber, RateLimiter } from '@/lib/security';
 
 
 export async function getMedicalResume(
@@ -139,6 +140,11 @@ export async function runSuggestDifferentialDiagnosis(input: SuggestDifferential
 
 export async function deletePatientAction(id: string) {
     try {
+        // Validate patient ID
+        if (!validatePatientId(id)) {
+            return { success: false, error: 'Invalid patient ID format.' };
+        }
+        
         await dbDeletePatient(id);
         revalidatePath('/');
         return { success: true };
@@ -251,3 +257,4 @@ export async function runTelegramChatbotAdvancedAction(
     };
   }
 }
+

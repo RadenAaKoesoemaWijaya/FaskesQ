@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Suspense } from 'react';
 import { LayoutClient } from '@/components/layout-client';
+import ErrorBoundary from '@/components/error-boundary-client';
 
 export const metadata: Metadata = {
   title: 'FaskesQ - Rekam Medis Elektronik',
@@ -23,10 +24,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased h-full" suppressHydrationWarning={true}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <LayoutClient>{children}</LayoutClient>
-        </Suspense>
-        <Toaster />
+        <ErrorBoundary>
+          <Suspense fallback={<div>Loading...</div>}>
+            <LayoutClient>{children}</LayoutClient>
+          </Suspense>
+          <Toaster />
+        </ErrorBoundary>
       </body>
     </html>
   );
