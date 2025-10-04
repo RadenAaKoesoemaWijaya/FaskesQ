@@ -32,7 +32,7 @@ import {
   Video
 } from 'lucide-react';
 import { runTeleconsultChatbotAction } from '@/app/actions';
-import type { ChatMessage } from '@/ai/flows/teleconsult-chatbot-flow';
+import type { ChatMessage } from '@/app/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 

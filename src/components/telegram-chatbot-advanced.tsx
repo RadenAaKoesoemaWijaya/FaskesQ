@@ -50,13 +50,6 @@ interface MessageTemplate {
   content: string;
 }
 
-interface ConsultationContext {
-  symptoms: string[];
-  diagnosis: string;
-  treatment: string;
-  notes: string;
-}
-
 export function TelegramChatbotAdvanced({ patient, messages: parentMessages, consultationContext: initialContext, onChatbotResponse, onClose }: TelegramChatbotAdvancedProps) {
   const [messages, setMessages] = useState<TelegramMessage[]>([]);
   const [input, setInput] = useState('');
@@ -65,13 +58,13 @@ export function TelegramChatbotAdvanced({ patient, messages: parentMessages, con
   const [consultationContext, setConsultationContext] = useState<TelegramConsultationContext>(() => ({
     patientName: patient.name,
     age: new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear(),
-    gender: patient.gender === 'Pria' ? 'male' : patient.gender === 'Wanita' ? 'female' : 'male',
+    gender: patient.gender === 'Pria' ? 'male' : 'female',
     symptoms: initialContext.symptoms,
-    medicalHistory: patient.history?.map(exam => exam.diagnosis) || [],
-    currentMedications: patient.currentMedications || [],
-    allergies: patient.allergies || [],
+    medicalHistory: patient.history?.map(h => h.diagnosis) || [],
+    currentMedications: [],
+    allergies: [],
     vitals: {},
-    consultationNotes: initialContext.notes ? [initialContext.notes] : []
+    consultationNotes: [initialContext.notes]
   }));
   const [showTemplates, setShowTemplates] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
