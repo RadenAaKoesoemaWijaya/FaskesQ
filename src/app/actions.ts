@@ -30,6 +30,11 @@ import {
     type SuggestTherapyAndActionsInput,
     type SuggestTherapyAndActionsOutput
 } from '@/ai/flows/suggest-therapy-and-actions';
+import {
+    suggestPatientEducation,
+    type SuggestPatientEducationInput,
+    type SuggestPatientEducationOutput
+} from '@/ai/flows/suggest-patient-education';
 
 import {
     verifyBpjs,
@@ -183,6 +188,23 @@ export async function runSuggestTherapyAndActions(input: SuggestTherapyAndAction
         return {
             success: false,
             error: error.message || 'Terjadi kesalahan saat memberikan rekomendasi terapi.',
+        };
+    }
+}
+
+export async function runSuggestPatientEducation(input: SuggestPatientEducationInput): Promise<{
+    success: boolean;
+    data?: SuggestPatientEducationOutput;
+    error?: string;
+}> {
+    try {
+        const result = await suggestPatientEducation(input);
+        return {success: true, data: result};
+    } catch (error: any) {
+        console.error('Error running suggestPatientEducation:', error);
+        return {
+            success: false,
+            error: error.message || 'Terjadi kesalahan saat membuat rekomendasi edukasi.',
         };
     }
 }

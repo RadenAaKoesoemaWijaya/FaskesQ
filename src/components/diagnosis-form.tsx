@@ -10,13 +10,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Printer, Search, Loader2, Info, BrainCircuit, PlusCircle, Trash2 } from 'lucide-react';
+import { Printer, Search, Loader2, Info, BrainCircuit, PlusCircle, Trash2, Sparkles } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Patient } from '@/lib/types';
 import { useState } from 'react';
-import { getMedicalResume, runSuggestIcd10, runSuggestDifferentialDiagnosis } from '@/app/actions';
+import { getMedicalResume, runSuggestIcd10, runSuggestDifferentialDiagnosis, runSuggestPatientEducation } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -31,134 +31,30 @@ import type { SuggestDifferentialDiagnosisOutput } from '@/ai/flows/suggest-diff
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 
-// Type definitions for form values
-interface DiagnosisItem {
-  value: string;
-}
-
-interface ReferralData {
-  isReferred: boolean;
-  facility?: string;
-  reason?: string;
-}
-
-interface FormValues {
-  diagnoses: DiagnosisItem[];
-  mainComplaint: string;
-  presentIllness: string;
-  pastMedicalHistory: string;
-  drugAllergy: string;
-  consciousness: string;
-  bloodPressure: string;
-  heartRate: string;
-  respiratoryRate: string;
-  temperature: string;
-  eyes: string;
-  nose: string;
-  mouth: string;
-  lungsAuscultation: string;
-  heartAuscultation: string;
-  abdomenAuscultation: string;
-  prognosis: string;
-  patientEducation: string;
-  referral: ReferralData;
-}
-
-function ReferralPrintLayout({ patient, referralData, medicalResume }: { 
-  patient: Patient, 
-  referralData: ReferralData, 
-  medicalResume: string 
-}) {
-    const today = new Date().toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
-
-    return (
-        <div id="printable-referral-area" className="p-8 font-sans">
-             <header className="flex justify-between items-start mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold">FaskesQ</h1>
-                    <p className="text-sm text-gray-600">Jl. Kesehatan No. 1, Kota Sehat</p>
-                    <p className="text-sm text-gray-600">Telp: (021) 123-4567</p>
-                </div>
-                <div className="text-right">
-                    <h2 className="text-xl font-bold">Surat Rujukan</h2>
-                    <p className="text-sm">Tanggal: {today}</p>
-                </div>
-            </header>
-
-            <Separator className="my-6" />
-
-            <section className="mb-6">
-                <h3 className="font-bold text-lg mb-2">Data Pasien</h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                    <div><strong>Nama:</strong> {patient.name}</div>
-                    <div><strong>No. RM:</strong> {patient.medicalRecordNumber}</div>
-                    <div><strong>Tanggal Lahir:</strong> {patient.dateOfBirth}</div>
-                    <div><strong>Jenis Kelamin:</strong> {patient.gender}</div>
-                </div>
-            </section>
-            
-            <Separator className="my-6" />
-
-            <section className="mb-6">
-                <h3 className="font-bold text-lg mb-2">Informasi Rujukan</h3>
-                <div className="grid grid-cols-1 gap-y-2 text-sm">
-                    <div><strong>Dirujuk ke:</strong> {referralData?.facility || 'N/A'}</div>
-                    <div><strong>Alasan Rujukan:</strong> {referralData?.reason || 'N/A'}</div>
-                </div>
-            </section>
-
-             <Separator className="my-6" />
-
-            <section>
-                 <h3 className="font-bold text-lg mb-2">Ringkasan Medis</h3>
-                 <div className="space-y-4 text-sm border p-4 rounded-md">
-                    <p>{medicalResume || 'Resume medis tidak tersedia.'}</p>
-                 </div>
-            </section>
-
-             <footer className="mt-16 text-sm">
-                <div className="grid grid-cols-2 gap-8">
-                    <div></div>
-                    <div className="text-center">
-                        <p>Hormat kami,</p>
-                        <div className="h-20"></div>
-                        <p className="border-t pt-1">( Dr. Amanda Sari )</p>
-                    </div>
-                </div>
-            </footer>
-        </div>
-    )
-}
 
 export function DiagnosisForm({ patient }: { patient: Patient }) {
-  const { control, getValues, watch, setValue, formState: { errors } } = useFormContext<FormValues>();
+  const { control, getValues, watch, setValue, formState: { errors } } = useFormContext();
   const { toast } = useToast();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "diagnoses"
   });
 
-  // States for Referral
   const isReferred = watch('referral.isReferred');
   const [isPrinting, setIsPrinting] = useState(false);
   const [medicalResume, setMedicalResume] = useState('');
   
-  // States for ICD-10 Search
   const [isSearchingIcd, setIsSearchingIcd] = useState(false);
   const [icdSuggestions, setIcdSuggestions] = useState<SuggestIcd10Output['suggestions']>([]);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [searchTargetIndex, setSearchTargetIndex] = useState<number | null>(null);
 
-  // States for AI Differential Diagnosis
   const [showAiDiagnosis, setShowAiDiagnosis] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [diffDiagnosis, setDiffDiagnosis] = useState<SuggestDifferentialDiagnosisOutput['diagnoses']>([]);
-  
 
+  const [isGeneratingEducation, setIsGeneratingEducation] = useState(false);
+  
   const handleSearchIcd = async (index: number) => {
       setSearchTargetIndex(index);
       const query = getValues(`diagnoses.${index}.value`);
@@ -204,14 +100,13 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
     try {
         const values = getValues();
         const anamnesis = `Keluhan Utama: ${values.mainComplaint}. Riwayat Sekarang: ${values.presentIllness}. Riwayat Dahulu: ${values.pastMedicalHistory}. Alergi: ${values.drugAllergy}.`;
-        const physicalExamination = `Kesadaran: ${values.consciousness}, TD: ${values.bloodPressure}, Nadi: ${values.heartRate}, RR: ${values.respiratoryRate}, Suhu: ${values.temperature}.`;
         const physicalExam = `Kesadaran: ${values.consciousness}, TD: ${values.bloodPressure}, Nadi: ${values.heartRate}, RR: ${values.respiratoryRate}, Suhu: ${values.temperature}. Temuan lain: ${values.eyes}, ${values.nose}, ${values.mouth}, ${values.lungsAuscultation}, ${values.heartAuscultation}, ${values.abdomenAuscultation}`;
         
         if (!values.mainComplaint) {
             toast({
                 variant: 'destructive',
                 title: 'Data Tidak Lengkap',
-                description: 'Pastikan setidaknya kolom Anamnesis dan Pemeriksaan Fisik telah terisi.',
+                description: 'Pastikan setidaknya kolom Keluhan Utama pada Anamnesis telah terisi.',
             });
             return;
         }
@@ -236,7 +131,6 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
   }
   
   const handleAddDiagnosisFromAi = (diagnosis: string) => {
-    // If first diagnosis is empty, set it. Otherwise, append.
     const currentDiagnoses = getValues('diagnoses') as { value: string }[];
     if (currentDiagnoses.length === 0 || !currentDiagnoses[0].value) {
       setValue('diagnoses.0.value', diagnosis);
@@ -244,6 +138,41 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
       append({ value: diagnosis });
     }
   };
+
+  const handleGenerateEducation = async () => {
+    const diagnosis = getValues("diagnoses.0.value");
+    if (!diagnosis) {
+        toast({
+            variant: 'destructive',
+            title: 'Diagnosis Kerja Kosong',
+            description: 'Silakan isi Diagnosis Kerja sebelum membuat edukasi pasien.',
+        });
+        return;
+    }
+
+    setIsGeneratingEducation(true);
+    try {
+        const result = await runSuggestPatientEducation({ diagnosis });
+        if(result.success && result.data) {
+            const educationText = `Penjelasan Penyakit:\n${result.data.diseaseExplanation}\n\nRencana Pengobatan:\n${result.data.treatmentPlan}\n\nAnjuran Perawatan di Rumah:\n${result.data.homeCareAdvice}\n\nTanda Bahaya:\n${result.data.warningSigns}`;
+            setValue('patientEducation', educationText);
+            toast({
+                title: 'Edukasi Pasien Dibuat',
+                description: 'Teks edukasi pasien telah berhasil dibuat oleh AI.'
+            });
+        } else {
+            throw new Error(result.error || "Gagal membuat edukasi pasien.");
+        }
+    } catch (error: any) {
+         toast({
+            variant: "destructive",
+            title: "Gagal Membuat Edukasi",
+            description: error.message,
+        });
+    } finally {
+        setIsGeneratingEducation(false);
+    }
+  }
 
   const handlePrintReferral = async () => {
     setIsPrinting(true);
@@ -263,26 +192,12 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
       if (resumeResult.success && resumeResult.data) {
         setMedicalResume(resumeResult.data.medicalResume);
         
-        // Print after a short delay to ensure state is updated
         setTimeout(() => {
           const printContent = document.getElementById('printable-referral-area');
           if (printContent) {
             const printWindow = window.open('', '_blank');
             if (printWindow) {
-              printWindow.document.write(`
-                <html>
-                  <head>
-                    <title>Surat Rujukan - ${patient.name}</title>
-                    <style>
-                      body { font-family: Arial, sans-serif; margin: 20px; }
-                      .hidden { display: none; }
-                    </style>
-                  </head>
-                  <body>
-                    ${printContent.innerHTML}
-                  </body>
-                </html>
-              `);
+              printWindow.document.write('<html><head><title>Surat Rujukan</title></head><body>' + printContent.innerHTML + '</body></html>');
               printWindow.document.close();
               printWindow.print();
             }
@@ -306,7 +221,6 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
       setIsPrinting(false);
     }
   };
-
 
   return (
     <div className="space-y-8">
@@ -427,9 +341,15 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
                 name="patientEducation"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Edukasi Pasien</FormLabel>
+                         <div className="flex items-center justify-between">
+                            <FormLabel>Edukasi Pasien</FormLabel>
+                            <Button type="button" variant="outline" size="sm" onClick={handleGenerateEducation} disabled={isGeneratingEducation}>
+                                {isGeneratingEducation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                Buat Rekomendasi AI
+                            </Button>
+                        </div>
                         <FormControl>
-                            <Textarea placeholder="Jelaskan mengenai penyakit, rencana pengobatan, dan hal-hal yang perlu diperhatikan oleh pasien..." rows={4} {...field} />
+                            <Textarea placeholder="Jelaskan mengenai penyakit, rencana pengobatan, dan hal-hal yang perlu diperhatikan oleh pasien..." rows={8} {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -500,7 +420,10 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
         </div>
       </div>
       <div className="hidden">
-        <ReferralPrintLayout patient={patient} referralData={watch('referral')} medicalResume={medicalResume} />
+         <div id="printable-referral-area" className="p-8">
+            <p>Nama: {patient.name}</p>
+            <p>Resume: {medicalResume}</p>
+        </div>
       </div>
 
        <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
@@ -518,7 +441,7 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
                         </div>
                     ) : icdSuggestions.length > 0 ? (
                         <div className="space-y-2">
-                            {icdSuggestions.map((suggestion: {code: string, description: string}, index: number) => (
+                            {icdSuggestions.map((suggestion, index) => (
                                 <button
                                     key={index}
                                     onClick={() => handleSelectIcd(suggestion)}
