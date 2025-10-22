@@ -16,7 +16,7 @@ const SuggestDifferentialDiagnosisInputSchema = z.object({
 });
 export type SuggestDifferentialDiagnosisInput = z.infer<typeof SuggestDifferentialDiagnosisInputSchema>;
 
-const SuggestDifferentialDiagnosisOutputSchema = z.object({
+export const SuggestDifferentialDiagnosisOutputSchema = z.object({
   diagnoses: z.array(z.object({
     diagnosis: z.string().describe('The name of the possible diagnosis.'),
     confidence: z.number().describe('The confidence score of the AI in this diagnosis, as a percentage (0-100).'),
