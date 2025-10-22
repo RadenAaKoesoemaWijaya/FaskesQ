@@ -28,7 +28,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { SuggestIcd10Output } from '@/ai/flows/suggest-icd10-flow';
 import type { SuggestDifferentialDiagnosisOutput } from '@/ai/flows/suggest-differential-diagnosis';
-import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 
 
@@ -256,9 +255,6 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
                                 <div key={i} className="p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => handleAddDiagnosisFromAi(diag.diagnosis)}>
                                     <div className="flex justify-between items-start">
                                         <h5 className="font-semibold">{diag.diagnosis}</h5>
-                                        <Badge variant={diag.priority === 'High' ? 'destructive' : diag.priority === 'Medium' ? 'secondary' : 'outline'}>
-                                            {diag.priority} Priority
-                                        </Badge>
                                     </div>
                                     <p className="text-sm text-muted-foreground mt-1 mb-2">{diag.reasoning}</p>
                                     <span className="text-xs font-medium text-blue-600">Keyakinan AI: {diag.confidence}%</span>
