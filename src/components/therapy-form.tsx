@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Save, Trash2, Bot, Loader2, BedDouble, Download, Send } from 'lucide-react';
+import { PlusCircle, Save, Trash2, Bot, Loader2, BedDouble, Download, Send, Wand2, Pill, Stethoscope } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getMedicalResume, runSendToSatuSehat } from '@/app/actions';
+import { getMedicalResume, runSendToSatuSehat, runSuggestTherapyAndActions } from '@/app/actions';
 import {
   Dialog,
   DialogContent,
@@ -28,10 +28,11 @@ import {
 import { Switch } from './ui/switch';
 import Papa from 'papaparse';
 import type { Patient } from '@/lib/types';
+import type { SuggestTherapyAndActionsOutput } from '@/ai/flows/suggest-therapy-and-actions';
 
 
 export function TherapyForm({ patient }: { patient: Patient }) {
-  const { control, getValues, watch } = useFormContext();
+  const { control, getValues, watch, setValue } = useFormContext();
   const { toast } = useToast();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,7 +40,11 @@ export function TherapyForm({ patient }: { patient: Patient }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [medicalResume, setMedicalResume] = useState('');
 
-  const { fields, append, remove } = useFieldArray({
+  // AI Therapy Suggestions state
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<SuggestTherapyAndActionsOutput | null>(null);
+
+  const { fields: prescriptionFields, append: appendPrescription, remove: removePrescription } = useFieldArray({
     control: control,
     name: "prescriptions"
   });
@@ -128,7 +133,6 @@ export function TherapyForm({ patient }: { patient: Patient }) {
     }
   };
 
-
   const handleSaveAndSummarize = async () => {
     setIsProcessing(true);
     try {
@@ -155,12 +159,11 @@ export function TherapyForm({ patient }: { patient: Patient }) {
             let toastDescription = 'Data pemeriksaan berhasil disimpan dan ringkasan dibuat.';
 
             if (startTime && startTime !== 'completed') {
-                // Gunakan timestamp yang disimpan di localStorage untuk menghitung elapsed time
                 const elapsed = Math.floor((Date.now() - parseInt(startTime, 10)) / 1000);
                 const minutes = Math.floor(elapsed / 60);
                 const seconds = elapsed % 60;
                 toastDescription += ` Total waktu pelayanan: ${minutes} menit ${seconds} detik.`;
-                localStorage.setItem(storageKey, 'completed'); // Mark service as completed
+                localStorage.setItem(storageKey, 'completed');
             }
             
             toast({
@@ -199,7 +202,7 @@ export function TherapyForm({ patient }: { patient: Patient }) {
     const result = await runSendToSatuSehat({
         patientId: patient.id,
         patientName: patient.name,
-        practitionerName: 'Dr. Amanda Sari', // Placeholder
+        practitionerName: 'Dr. Amanda Sari',
         diagnosis: workingDiagnosis,
         encounterData: {
             anamnesis: formData.mainComplaint,
@@ -223,74 +226,177 @@ export function TherapyForm({ patient }: { patient: Patient }) {
     setIsSending(false);
   }
 
+  const handleSuggestTherapy = async () => {
+    const formData = getValues();
+    const diagnosis = formData.diagnoses[0]?.value;
+
+    if (!diagnosis) {
+      toast({
+        variant: "destructive",
+        title: "Diagnosis Kerja Kosong",
+        description: "Silakan isi Diagnosis Kerja sebelum meminta rekomendasi AI.",
+      });
+      return;
+    }
+
+    setIsSuggesting(true);
+    setAiSuggestions(null);
+    try {
+      const result = await runSuggestTherapyAndActions({ diagnosis });
+      if (result.success && result.data) {
+        setAiSuggestions(result.data);
+        toast({
+          title: "Rekomendasi Terapi Diterima",
+          description: "AI telah memberikan saran obat dan tindakan medis.",
+        });
+      } else {
+        throw new Error(result.error || "Gagal mendapatkan rekomendasi.");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Mendapatkan Rekomendasi",
+        description: error.message,
+      });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const handleAddSuggestionToPrescription = (med: SuggestTherapyAndActionsOutput['medications'][0]) => {
+    appendPrescription({
+      drugName: med.medicationName,
+      preparation: '', // Preparation is not provided by AI, user needs to fill it
+      dose: med.dosage,
+      quantity: '' // Quantity is not provided by AI, user needs to fill it
+    });
+  };
+
+  const handleAddSuggestionToAction = (action: SuggestTherapyAndActionsOutput['actions'][0]) => {
+    const currentActions = getValues('actions') || '';
+    const newActionText = `• ${action.actionName}: ${action.reasoning}`;
+    setValue('actions', `${currentActions}\n${newActionText}`.trim());
+  };
+
   return (
     <div className="space-y-6">
-        <div>
-            <h3 className="text-lg font-medium mb-4">Peresepan Obat</h3>
-            <div className="space-y-4">
-            {fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-end p-4 border rounded-lg relative">
-                    <FormField
-                        control={control}
-                        name={`prescriptions.${index}.drugName`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Nama Obat</FormLabel>
-                                <FormControl><Input placeholder="Amoxicillin" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={control}
-                        name={`prescriptions.${index}.preparation`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Sediaan</FormLabel>
-                                <FormControl><Input placeholder="500mg Tab" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={control}
-                        name={`prescriptions.${index}.dose`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Dosis</FormLabel>
-                                <FormControl><Input placeholder="3 x 1" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={control}
-                        name={`prescriptions.${index}.quantity`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Jumlah</FormLabel>
-                                <FormControl><Input placeholder="15" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ))}
+      <div>
+        <h3 className="text-lg font-medium mb-4">Peresepan Obat</h3>
+        <div className="space-y-4">
+          {prescriptionFields.map((field, index) => (
+            <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-end p-4 border rounded-lg relative">
+              <FormField
+                control={control}
+                name={`prescriptions.${index}.drugName`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama Obat</FormLabel>
+                    <FormControl><Input placeholder="Amoxicillin" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`prescriptions.${index}.preparation`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sediaan</FormLabel>
+                    <FormControl><Input placeholder="500mg Tab" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`prescriptions.${index}.dose`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dosis</FormLabel>
+                    <FormControl><Input placeholder="3 x 1" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`prescriptions.${index}.quantity`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jumlah</FormLabel>
+                    <FormControl><Input placeholder="15" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="button" variant="destructive" size="icon" onClick={() => removePrescription(index)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
-             <Button
+          ))}
+        </div>
+        <div className="flex items-center gap-4 mt-4">
+            <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="mt-4"
-                onClick={() => append({ drugName: '', preparation: '', dose: '', quantity: '' })}
+                onClick={() => appendPrescription({ drugName: '', preparation: '', dose: '', quantity: '' })}
             >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Tambah Obat
             </Button>
+             <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSuggestTherapy}
+                disabled={isSuggesting}
+            >
+                {isSuggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                Dapatkan Rekomendasi AI
+            </Button>
         </div>
+
+        {aiSuggestions && (
+            <div className="mt-6 p-4 border rounded-lg bg-secondary/50 animate-in fade-in-50">
+                 <h4 className="text-md font-semibold mb-4 flex items-center"><Wand2 className="mr-2 h-5 w-5 text-primary"/> Rekomendasi Terapi dari AI</h4>
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <h5 className="font-semibold mb-2 flex items-center"><Pill className="mr-2 h-4 w-4"/>Saran Obat</h5>
+                        <div className="space-y-3">
+                            {aiSuggestions.medications.map((med, i) => (
+                                <div key={`med-${i}`} className="p-3 border rounded-md bg-background relative">
+                                    <p className="font-bold">{med.medicationName}</p>
+                                    <p className="text-sm text-muted-foreground">{med.dosage}</p>
+                                    <p className="text-xs mt-1 italic">"{med.reasoning}"</p>
+                                     <Button size="sm" variant="outline" className="absolute top-2 right-2 h-7" onClick={() => handleAddSuggestionToPrescription(med)}>
+                                        <PlusCircle className="mr-2 h-3 w-3"/> Tambah
+                                    </Button>
+                                </div>
+                            ))}
+                             {aiSuggestions.medications.length === 0 && <p className="text-sm text-muted-foreground">Tidak ada rekomendasi obat spesifik dari AI.</p>}
+                        </div>
+                    </div>
+                     <div>
+                        <h5 className="font-semibold mb-2 flex items-center"><Stethoscope className="mr-2 h-4 w-4"/>Saran Tindakan & Edukasi</h5>
+                        <div className="space-y-3">
+                            {aiSuggestions.actions.map((action, i) => (
+                                <div key={`action-${i}`} className="p-3 border rounded-md bg-background relative">
+                                    <p className="font-bold">{action.actionName}</p>
+                                     <p className="text-xs mt-1 italic">"{action.reasoning}"</p>
+                                     <Button size="sm" variant="outline" className="absolute top-2 right-2 h-7" onClick={() => handleAddSuggestionToAction(action)}>
+                                        <PlusCircle className="mr-2 h-3 w-3"/> Tambah
+                                    </Button>
+                                </div>
+                            ))}
+                            {aiSuggestions.actions.length === 0 && <p className="text-sm text-muted-foreground">Tidak ada rekomendasi tindakan spesifik dari AI.</p>}
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        )}
+
+      </div>
         
         <Separator />
 
@@ -299,11 +405,11 @@ export function TherapyForm({ patient }: { patient: Patient }) {
             name="actions"
             render={({ field }) => (
             <FormItem>
-                <FormLabel>Tindakan Medis Lainnya</FormLabel>
+                <FormLabel>Tindakan Medis & Edukasi</FormLabel>
                 <FormControl>
                 <Textarea
                     placeholder="Contoh: Dilakukan hecting 3 jahitan. Edukasi untuk menjaga luka tetap kering..."
-                    rows={4}
+                    rows={5}
                     {...field}
                 />
                 </FormControl>

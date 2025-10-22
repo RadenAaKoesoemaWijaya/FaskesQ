@@ -20,6 +20,16 @@ import {
     type SuggestDifferentialDiagnosisInput,
     type SuggestDifferentialDiagnosisOutput
 } from '@/ai/flows/suggest-differential-diagnosis';
+import {
+    suggestSupportingExaminations,
+    type SuggestSupportingExaminationsInput,
+    type SuggestSupportingExaminationsOutput
+} from '@/ai/flows/suggest-supporting-examinations';
+import {
+    suggestTherapyAndActions,
+    type SuggestTherapyAndActionsInput,
+    type SuggestTherapyAndActionsOutput
+} from '@/ai/flows/suggest-therapy-and-actions';
 
 import {
     verifyBpjs,
@@ -139,6 +149,40 @@ export async function runSuggestDifferentialDiagnosis(input: SuggestDifferential
         return {
             success: false,
             error: 'Terjadi kesalahan saat mencari diagnosis banding.',
+        };
+    }
+}
+
+export async function runSuggestSupportingExaminations(input: SuggestSupportingExaminationsInput): Promise<{
+    success: boolean;
+    data?: SuggestSupportingExaminationsOutput;
+    error?: string;
+}> {
+    try {
+        const result = await suggestSupportingExaminations(input);
+        return {success: true, data: result};
+    } catch (error) {
+        console.error('Error running suggestSupportingExaminations:', error);
+        return {
+            success: false,
+            error: 'Terjadi kesalahan saat meminta rekomendasi pemeriksaan.',
+        };
+    }
+}
+
+export async function runSuggestTherapyAndActions(input: SuggestTherapyAndActionsInput): Promise<{
+    success: boolean;
+    data?: SuggestTherapyAndActionsOutput;
+    error?: string;
+}> {
+    try {
+        const result = await suggestTherapyAndActions(input);
+        return {success: true, data: result};
+    } catch (error: any) {
+        console.error('Error running suggestTherapyAndActions:', error);
+        return {
+            success: false,
+            error: error.message || 'Terjadi kesalahan saat memberikan rekomendasi terapi.',
         };
     }
 }
@@ -282,4 +326,3 @@ export async function runTeleconsultChatbotAction(
     };
   }
 }
-
