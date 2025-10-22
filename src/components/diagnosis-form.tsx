@@ -156,7 +156,7 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
   // States for AI Differential Diagnosis
   const [showAiDiagnosis, setShowAiDiagnosis] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
-  const [diffDiagnosis, setDiffDiagnosis] = useState<string[]>([]);
+  const [diffDiagnosis, setDiffDiagnosis] = useState<SuggestDifferentialDiagnosisOutput['diagnoses']>([]);
   
 
   const handleSearchIcd = async (index: number) => {
@@ -334,15 +334,21 @@ export function DiagnosisForm({ patient }: { patient: Patient }) {
                         {isSuggesting ? 'Menganalisis...' : 'Dapatkan Rekomendasi'}
                     </Button>
                     {isSuggesting && <p className="text-sm text-muted-foreground">AI sedang menganalisis data anamnesis dan pemeriksaan fisik...</p>}
-                    {diffDiagnosis.length > 0 && (
-                        <div>
-                             <h4 className="font-semibold text-sm mb-2">Klik untuk menambahkan ke daftar diagnosis:</h4>
-                             <div className="flex flex-wrap gap-2">
+                     {diffDiagnosis.length > 0 && (
+                        <div className="pt-2">
+                            <h4 className="font-semibold text-sm mb-3">Rekomendasi Diagnosis (klik untuk menambahkan):</h4>
+                            <div className="space-y-3">
                                 {diffDiagnosis.map((diag, i) => (
-                                    <Badge key={i} variant="secondary" className="cursor-pointer" onClick={() => handleAddDiagnosisFromAi(diag)}>
-                                        <PlusCircle className="mr-2 h-3 w-3" />
-                                        {diag}
-                                    </Badge>
+                                <div key={i} className="p-3 border rounded-lg cursor-pointer hover:bg-accent" onClick={() => handleAddDiagnosisFromAi(diag.diagnosis)}>
+                                    <div className="flex justify-between items-start">
+                                        <h5 className="font-semibold">{diag.diagnosis}</h5>
+                                        <Badge variant={diag.priority === 'High' ? 'destructive' : diag.priority === 'Medium' ? 'secondary' : 'outline'}>
+                                            {diag.priority} Priority
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mt-1 mb-2">{diag.reasoning}</p>
+                                    <span className="text-xs font-medium text-blue-600">Keyakinan AI: {diag.confidence}%</span>
+                                </div>
                                 ))}
                             </div>
                         </div>
