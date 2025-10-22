@@ -11,15 +11,43 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Upload, Printer, Loader2, FileCheck, X } from 'lucide-react';
+import { Save, Upload, Printer, Loader2, FileCheck, X, Sparkles, BrainCircuit } from 'lucide-react';
 import { Label } from './ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Checkbox } from './ui/checkbox';
 import type { Patient } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Separator } from './ui/separator';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { suggestSupportingExaminations, SuggestSupportingExaminationsOutput } from '@/ai/flows/suggest-supporting-examinations';
+import { Badge } from './ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+const requestMap: { [key: string]: string } = {
+    'Darah Lengkap': 'requests.lab.completeBloodCount',
+    'Urinalisa': 'requests.lab.urinalysis',
+    'Kimia Darah': 'requests.lab.bloodChemistry',
+    'Mikroskopis': 'requests.lab.microscopic',
+    'Imunologi (Rapid Test)': 'requests.lab.immunology',
+    'Rontgen (X-Ray)': 'requests.radiology.xray',
+    'CT Scan': 'requests.radiology.ctScan',
+    'MRI': 'requests.radiology.mri',
+    'USG (Ultrasonografi)': 'requests.radiology.ultrasound',
+    'PET Scan': 'requests.radiology.petScan',
+    'EKG (Elektrokardiogram)': 'requests.other.ekg',
+    'EEG (Elektroensefalogram)': 'requests.other.eeg',
+    'EMG (Elektromiogram)': 'requests.other.emg',
+};
 
 const labRequests = [
     { id: 'requests.lab.completeBloodCount', label: 'Darah Lengkap' },
@@ -127,14 +155,16 @@ function RequestPrintLayout({ patient, requests }: { patient: Patient, requests:
     )
 }
 
-
 export function SupportingExamForm({ patient }: { patient: Patient }) {
-  const { control, handleSubmit, watch, setValue } = useFormContext();
+  const { control, handleSubmit, watch, setValue, getValues } = useFormContext();
   const { toast } = useToast();
   const requests = watch('requests');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<SuggestSupportingExaminationsOutput | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -148,11 +178,69 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
     }
   };
 
+ const handleGenerateSuggestions = async () => {
+    setIsGenerating(true);
+    setAiSuggestions(null);
+    try {
+      const anamnesis = getValues('anamnesis');
+      const physicalExam = getValues('physicalExamination');
+      const diagnosisForm = getValues('diagnosis');
+
+      // Simple check for now, can be improved
+      const differentialDiagnoses = diagnosisForm ? [{ diagnosis: diagnosisForm, confidence: 90, priority: 'High', reasoning: 'Based on form input' }] : [];
+
+      if (!anamnesis || !physicalExam) {
+        toast({ title: 'Data Kurang', description: 'Anamnesis dan Pemeriksaan Fisik harus diisi.', variant: 'destructive' });
+        return;
+      }
+
+      const result = await suggestSupportingExaminations({
+        anamnesis,
+        physicalExam,
+        differentialDiagnoses,
+      });
+
+      setAiSuggestions(result);
+      if (result.examinations.length > 0) {
+        setShowConfirmation(true);
+      } else {
+        toast({ title: 'Tidak Ada Rekomendasi', description: 'AI tidak menemukan rekomendasi pemeriksaan yang relevan saat ini.' });
+      }
+    } catch (error) {
+      console.error("Failed to get AI suggestions:", error);
+      toast({ title: 'Gagal Menghasilkan Rekomendasi', description: 'Terjadi kesalahan saat berkomunikasi dengan AI.', variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleAcceptSuggestions = () => {
+    if (!aiSuggestions) return;
+
+    let suggestionsAddedCount = 0;
+    aiSuggestions.examinations.forEach(suggestion => {
+      const formFieldName = requestMap[suggestion.examinationName];
+      if (formFieldName) {
+        setValue(formFieldName, true, { shouldDirty: true, shouldValidate: true });
+        suggestionsAddedCount++;
+      }
+    });
+
+    if (suggestionsAddedCount > 0) {
+        toast({ 
+            title: 'Permintaan Ditambahkan', 
+            description: `${suggestionsAddedCount} rekomendasi pemeriksaan telah ditambahkan ke formulir.`
+        });
+    }
+
+    setShowConfirmation(false);
+    setAiSuggestions(null);
+  };
+
   const triggerFileSelect = () => fileInputRef.current?.click();
 
   async function onSubmit(values: any) {
     setIsSaving(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('Supporting Exam submitted:', { ...values, uploadedFile: uploadedFile?.name });
     setIsSaving(false);
@@ -167,7 +255,20 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
   }
 
   return (
+      <> 
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center"><BrainCircuit className="mr-2" />Sistem Pendukung Keputusan Klinis AI</CardTitle>
+                <CardDescription>Dapatkan rekomendasi pemeriksaan penunjang berdasarkan data klinis pasien untuk membantu menegakkan diagnosis.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Button type="button" onClick={handleGenerateSuggestions} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    {isGenerating ? 'Menganalisis...' : 'Dapatkan Rekomendasi AI'}
+                </Button>
+            </CardContent>
+        </Card>
         <Accordion type="single" collapsible className="w-full space-y-4">
             <AccordionItem value="request" className="border rounded-lg px-4">
                 <AccordionTrigger className="text-lg font-medium">Buat Permintaan Pemeriksaan</AccordionTrigger>
@@ -372,5 +473,33 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
            <RequestPrintLayout patient={patient} requests={requests} />
         </div>
       </form>
+       <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Konfirmasi Rekomendasi AI</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        AI telah merekomendasikan pemeriksaan berikut berdasarkan data pasien. Apakah Anda ingin menambahkannya ke formulir permintaan?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="max-h-60 overflow-y-auto p-2 border rounded-md my-4">
+                    {aiSuggestions?.examinations.map((suggestion, index) => (
+                         <div key={index} className="mb-3 p-3 rounded-lg bg-secondary/50">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-semibold">{suggestion.examinationName}</h4>
+                                <Badge variant={suggestion.importance === 'Wajib' ? 'destructive' : suggestion.importance === 'Disarankan' ? 'secondary' : 'outline'}>
+                                    {suggestion.importance}
+                                </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{suggestion.reasoning}</p>
+                        </div>
+                    ))}
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setAiSuggestions(null)}>Tolak</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleAcceptSuggestions}>Tambahkan ke Permintaan</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </>
   );
 }
