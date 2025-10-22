@@ -42,13 +42,13 @@ const prompt = ai.definePrompt({
 
   Hasilkan draf edukasi yang mencakup empat bagian utama berikut:
 
-  1.  **Penjelasan Penyakit (`diseaseExplanation`):** Jelaskan secara singkat apa itu penyakit ini, apa penyebab umumnya, dan bagaimana gejalanya bisa muncul. Contoh: \"Hipertensi atau tekanan darah tinggi adalah kondisi di mana...\"
+  1.  **Penjelasan Penyakit (\`diseaseExplanation\`):** Jelaskan secara singkat apa itu penyakit ini, apa penyebab umumnya, dan bagaimana gejalanya bisa muncul. Contoh: \"Hipertensi atau tekanan darah tinggi adalah kondisi di mana...\"
 
-  2.  **Rencana Pengobatan (`treatmentPlan`):** Jelaskan secara umum rencana pengobatan yang akan dijalani pasien. Contoh: \"Kami akan memulai pengobatan dengan obat X untuk membantu mengontrol tekanan darah Anda. Selain itu, kami juga akan...\"
+  2.  **Rencana Pengobatan (\`treatmentPlan\`):** Jelaskan secara umum rencana pengobatan yang akan dijalani pasien. Contoh: \"Kami akan memulai pengobatan dengan obat X untuk membantu mengontrol tekanan darah Anda. Selain itu, kami juga akan...\"
 
-  3.  **Anjuran Perawatan di Rumah (`homeCareAdvice`):** Berikan poin-poin anjuran praktis yang bisa dilakukan pasien di rumah, seperti istirahat, diet, aktivitas fisik, atau cara minum obat.
+  3.  **Anjuran Perawatan di Rumah (\`homeCareAdvice\`):** Berikan poin-poin anjuran praktis yang bisa dilakukan pasien di rumah, seperti istirahat, diet, aktivitas fisik, atau cara minum obat.
 
-  4.  **Tanda Bahaya (`warningSigns`):** Jelaskan tanda-tanda bahaya spesifik yang mengharuskan pasien untuk segera kembali ke dokter atau fasilitas kesehatan. Contoh: \"Segera kembali ke dokter jika Anda mengalami sakit kepala hebat, pandangan kabur, atau nyeri dada.\"
+  4.  **Tanda Bahaya (\`warningSigns\`):** Jelaskan tanda-tanda bahaya spesifik yang mengharuskan pasien untuk segera kembali ke dokter atau fasilitas kesehatan. Contoh: \"Segera kembali ke dokter jika Anda mengalami sakit kepala hebat, pandangan kabur, atau nyeri dada.\"
 
   Pastikan output Anda terstruktur sesuai format yang diminta.
   `,

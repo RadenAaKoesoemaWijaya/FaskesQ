@@ -47,11 +47,11 @@ const prompt = ai.definePrompt({
 
   Tugas Anda adalah menghasilkan:
   1.  **Rekomendasi Obat (Medications):**
-      - Untuk setiap obat, berikan: `medicationName`, `dosage` (dosis dan aturan pakai), dan `reasoning` (alasan klinis singkat).
+      - Untuk setiap obat, berikan: \`medicationName\`, \`dosage\` (dosis dan aturan pakai), dan \`reasoning\` (alasan klinis singkat).
       - Fokus pada obat-obat lini pertama atau yang paling umum digunakan untuk diagnosis tersebut.
 
   2.  **Rekomendasi Tindakan (Actions):**
-      - Untuk setiap tindakan, berikan: `actionName` (nama tindakan/prosedur/edukasi) dan `reasoning` (alasan klinis).
+      - Untuk setiap tindakan, berikan: \`actionName\` (nama tindakan/prosedur/edukasi) dan \`reasoning\` (alasan klinis).
       - Ini bisa mencakup anjuran perubahan gaya hidup, edukasi spesifik, atau prosedur medis non-obat lainnya.
 
   Hasilkan output dalam format yang terstruktur dan siap digunakan oleh dokter untuk mengisi resep dan rencana tindakan.
