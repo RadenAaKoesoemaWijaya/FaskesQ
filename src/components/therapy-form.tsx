@@ -160,9 +160,20 @@ export function TherapyForm({ patient }: { patient: Patient }) {
 
             if (startTime && startTime !== 'completed') {
                 const elapsed = Math.floor((Date.now() - parseInt(startTime, 10)) / 1000);
-                const minutes = Math.floor(elapsed / 60);
+                const hours = Math.floor(elapsed / 3600);
+                const minutes = Math.floor((elapsed % 3600) / 60);
                 const seconds = elapsed % 60;
-                toastDescription += ` Total waktu pelayanan: ${minutes} menit ${seconds} detik.`;
+                
+                let timeString = '';
+                if (hours > 0) {
+                    timeString += `${hours} jam `;
+                }
+                if (minutes > 0 || hours > 0) {
+                    timeString += `${minutes} menit `;
+                }
+                timeString += `${seconds} detik`;
+                
+                toastDescription += ` Total waktu pelayanan: ${timeString}.`;
                 localStorage.setItem(storageKey, 'completed');
             }
             

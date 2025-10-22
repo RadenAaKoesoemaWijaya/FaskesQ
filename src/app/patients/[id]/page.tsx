@@ -169,9 +169,10 @@ function ServiceTimer({ patientId }: { patientId: string }) {
       }
       const now = Date.now();
       const elapsed = Math.floor((now - start) / 1000);
-      const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const hours = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
       const seconds = String(elapsed % 60).padStart(2, '0');
-      setElapsedTime(`${minutes}:${seconds}`);
+      setElapsedTime(`${hours}:${minutes}:${seconds}`);
     };
     
     updateTimer(); // Initial call
