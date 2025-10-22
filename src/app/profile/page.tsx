@@ -30,17 +30,17 @@ function ProfileCard({ onEditToggle, isEditing }: { onEditToggle: () => void, is
             <span className="sr-only">Ubah Foto</span>
           </Button>
         </div>
-        <CardTitle className="mt-4">Dr. Amanda Sari</CardTitle>
+        <CardTitle className="mt-4">Dr. Wijaya</CardTitle>
         <CardDescription>Dokter Umum</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-3">
           <Mail className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm">amanda.sari@faskesq.com</span>
+          <span className="text-sm">koesoemawijaya86@gmail.com</span>
         </div>
         <div className="flex items-center gap-3">
           <Phone className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm">+62 812-3456-7890</span>
+          <span className="text-sm">+62 812-3874-2321</span>
         </div>
         <Separator />
         <Button className="w-full" onClick={onEditToggle}>
@@ -106,7 +106,7 @@ function AccountSettings({ isEditing, onSave }: { isEditing: boolean, onSave: ()
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="fullName">Nama Lengkap</Label>
-                        <Input id="fullName" defaultValue="Dr. Amanda Sari" disabled={!isEditing} />
+                        <Input id="fullName" defaultValue="Dr. Wijaya" disabled={!isEditing} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="specialty">Spesialisasi</Label>
@@ -118,16 +118,16 @@ function AccountSettings({ isEditing, onSave }: { isEditing: boolean, onSave: ()
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="sipNumber">Nomor Surat Ijin Praktek (SIP)</Label>
-                        <Input id="sipNumber" defaultValue="SIP/123/456/2024" disabled={!isEditing} />
+                        <Input id="sipNumber" defaultValue="SIP/123/456/2025" disabled={!isEditing} />
                     </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="email">Alamat Email</Label>
-                    <Input id="email" type="email" defaultValue="amanda.sari@faskesq.com" disabled={!isEditing} />
+                    <Input id="email" type="email" defaultValue="koesoemawijaya86@gmail.com" disabled={!isEditing} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="phoneNumber">Nomor Telepon</Label>
-                    <Input id="phoneNumber" type="tel" defaultValue="+62 812-3456-7890" disabled={!isEditing} />
+                    <Input id="phoneNumber" type="tel" defaultValue="+62 812-3874-2321" disabled={!isEditing} />
                 </div>
                 <Separator />
                 <div className="space-y-4">
