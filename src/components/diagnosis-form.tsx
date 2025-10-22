@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { SuggestIcd10Output } from '@/ai/flows/suggest-icd10-flow';
-import type { SuggestDifferentialDiagnosisOutput } from '@/ai/flows/suggest-differential-diagnosis';
+import type { SuggestDifferentialDiagnosisOutput } from '@/ai/flows/suggest-differential-diagnosis-types';
 import { cn } from '@/lib/utils';
 
 

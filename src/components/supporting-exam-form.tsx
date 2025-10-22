@@ -20,7 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/
 import { Separator } from '@/components/ui/separator';
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { suggestSupportingExaminations, SuggestSupportingExaminationsOutput } from '@/ai/flows/suggest-supporting-examinations';
+import { suggestSupportingExaminations } from '@/ai/flows/suggest-supporting-examinations';
+import type { SuggestSupportingExaminationsOutput } from '@/ai/flows/suggest-supporting-examinations-types';
 import { Badge } from './ui/badge';
 import {
   AlertDialog,
@@ -201,7 +202,7 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
       });
 
       setAiSuggestions(result);
-      if (result.examinations.length > 0) {
+      if (result.recommendations.length > 0) {
         setShowConfirmation(true);
       } else {
         toast({ title: 'Tidak Ada Rekomendasi', description: 'AI tidak menemukan rekomendasi pemeriksaan yang relevan saat ini.' });
@@ -218,8 +219,8 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
     if (!aiSuggestions) return;
 
     let suggestionsAddedCount = 0;
-    aiSuggestions.examinations.forEach(suggestion => {
-      const formFieldName = requestMap[suggestion.examinationName];
+    aiSuggestions.recommendations.forEach(suggestion => {
+      const formFieldName = requestMap[suggestion.examination];
       if (formFieldName) {
         setValue(formFieldName, true, { shouldDirty: true, shouldValidate: true });
         suggestionsAddedCount++;
@@ -482,13 +483,11 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="max-h-60 overflow-y-auto p-2 border rounded-md my-4">
-                    {aiSuggestions?.examinations.map((suggestion, index) => (
+                    {aiSuggestions?.recommendations.map((suggestion, index) => (
                          <div key={index} className="mb-3 p-3 rounded-lg bg-secondary/50">
                             <div className="flex justify-between items-center">
-                                <h4 className="font-semibold">{suggestion.examinationName}</h4>
-                                <Badge variant={suggestion.importance === 'Wajib' ? 'destructive' : suggestion.importance === 'Disarankan' ? 'secondary' : 'outline'}>
-                                    {suggestion.importance}
-                                </Badge>
+                                <h4 className="font-semibold">{suggestion.examination}</h4>
+                                <Badge variant="secondary">Disarankan</Badge>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">{suggestion.reasoning}</p>
                         </div>

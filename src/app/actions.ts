@@ -15,26 +15,26 @@ import {
   type SuggestIcd10Input,
   type SuggestIcd10Output,
 } from '@/ai/flows/suggest-icd10-flow';
+import { suggestDifferentialDiagnosis } from '@/ai/flows/suggest-differential-diagnosis';
 import {
-    suggestDifferentialDiagnosis,
     type SuggestDifferentialDiagnosisInput,
     type SuggestDifferentialDiagnosisOutput
-} from '@/ai/flows/suggest-differential-diagnosis';
+} from '@/ai/flows/suggest-differential-diagnosis-types';
+import { suggestSupportingExaminations } from '@/ai/flows/suggest-supporting-examinations';
 import {
-    suggestSupportingExaminations,
     type SuggestSupportingExaminationsInput,
     type SuggestSupportingExaminationsOutput
-} from '@/ai/flows/suggest-supporting-examinations';
+} from '@/ai/flows/suggest-supporting-examinations-types';
+import { suggestTherapyAndActions } from '@/ai/flows/suggest-therapy-and-actions';
 import {
-    suggestTherapyAndActions,
     type SuggestTherapyAndActionsInput,
     type SuggestTherapyAndActionsOutput
-} from '@/ai/flows/suggest-therapy-and-actions';
+} from '@/ai/flows/suggest-therapy-and-actions-types';
+import { suggestPatientEducation } from '@/ai/flows/suggest-patient-education';
 import {
-    suggestPatientEducation,
     type SuggestPatientEducationInput,
     type SuggestPatientEducationOutput
-} from '@/ai/flows/suggest-patient-education';
+} from '@/ai/flows/suggest-patient-education-types';
 
 import {
     verifyBpjs,

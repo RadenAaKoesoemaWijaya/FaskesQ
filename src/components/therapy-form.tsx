@@ -28,7 +28,7 @@ import {
 import { Switch } from './ui/switch';
 import Papa from 'papaparse';
 import type { Patient } from '@/lib/types';
-import type { SuggestTherapyAndActionsOutput } from '@/ai/flows/suggest-therapy-and-actions';
+import type { SuggestTherapyAndActionsOutput } from '@/ai/flows/suggest-therapy-and-actions-types';
 
 
 export function TherapyForm({ patient }: { patient: Patient }) {
