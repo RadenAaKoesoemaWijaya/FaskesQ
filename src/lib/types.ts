@@ -8,6 +8,7 @@ export type PatientRegistrationData = {
   insuranceNumber?: string;
   paymentMethod: 'Tunai' | 'Asuransi' | 'BPJS';
   medicalRecordNumber: string;
+  status: 'Hijau' | 'Kuning' | 'Merah';
 }
 
 export type ScreeningQuestion = {

@@ -42,7 +42,7 @@ const formSchema = z.object({
   medicalRecordNumber: z.string().min(1, {
     message: 'Nomor rekam medis wajib diisi.',
   }),
-  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+  status: z.enum(['Hijau', 'Kuning', 'Merah']),  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
     message: 'Silakan masukkan tanggal yang valid dalam format YYYY-MM-DD.',
   }),
   gender: z.enum(['Pria', 'Wanita', 'Lainnya']),
@@ -173,6 +173,31 @@ export function PatientRegistrationForm({ mode = 'create', patient }: PatientReg
                 <FormControl>
                   <Input placeholder="Contoh: MR005" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status Pasien</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih status triase pasien" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Hijau">Stabil (Hijau)</SelectItem>
+                    <SelectItem value="Kuning">Perlu Evaluasi (Kuning)</SelectItem>
+                    <SelectItem value="Merah">Gawat Darurat (Merah)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
