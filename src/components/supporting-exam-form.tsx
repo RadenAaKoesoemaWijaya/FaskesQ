@@ -22,6 +22,10 @@ import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { suggestSupportingExaminations } from '@/ai/flows/suggest-supporting-examinations';
 import type { SuggestSupportingExaminationsOutput } from '@/ai/flows/suggest-supporting-examinations-types';
+import { runEnhancedSuggestSupportingExaminations, validateClinicalData, getEnhancedDiagnosesWithExaminations } from '@/app/actions';
+import type { EnhancedSupportingExaminationsOutput } from '@/ai/flows/enhanced-supporting-examinations-types';
+import { SmartValidation } from '@/ai/flows/smart-validation';
+import { ProgressiveDisclosure } from '@/ai/flows/progressive-disclosure';
 import { Badge } from './ui/badge';
 import {
   AlertDialog,
@@ -165,7 +169,10 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<SuggestSupportingExaminationsOutput | null>(null);
+  const [enhancedAiSuggestions, setEnhancedAiSuggestions] = useState<EnhancedSupportingExaminationsOutput | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [useEnhancedMode, setUseEnhancedMode] = useState(true);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -182,50 +189,145 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
  const handleGenerateSuggestions = async () => {
     setIsGenerating(true);
     setAiSuggestions(null);
+    setEnhancedAiSuggestions(null);
+    setValidationResult(null);
+    
     try {
       const anamnesis = getValues('anamnesis');
       const physicalExam = getValues('physicalExamination');
       const diagnosisForm = getValues('diagnosis');
+      const mainComplaint = getValues('mainComplaint');
+      
+      // Get patient context
+      const patientContext = {
+        age: patient.age,
+        gender: (patient.gender === 'Pria' ? 'male' : patient.gender === 'Wanita' ? 'female' : undefined) as 'male' | 'female' | undefined,
+        specialization: getValues('specialization') || 'General Medicine'
+      };
 
-      // Simple check for now, can be improved
-      const differentialDiagnoses = diagnosisForm ? [{ diagnosis: diagnosisForm, confidence: 90, priority: 'High', reasoning: 'Based on form input' }] : [];
-
-      if (!anamnesis || !physicalExam) {
-        toast({ title: 'Data Kurang', description: 'Anamnesis dan Pemeriksaan Fisik harus diisi.', variant: 'destructive' });
-        return;
-      }
-
-      const result = await suggestSupportingExaminations({
+      // Validate clinical data first
+      const validationData = {
+        mainComplaint,
+        diagnosis: diagnosisForm,
         anamnesis,
         physicalExam,
-        differentialDiagnoses,
-      });
+        differentialDiagnoses: diagnosisForm ? [{ diagnosis: diagnosisForm, confidence: 90, priority: 'High', reasoning: 'Based on form input' }] : [],
+        patientContext
+      };
 
-      setAiSuggestions(result);
-      if (result.recommendations.length > 0) {
-        setShowConfirmation(true);
+      const validation = await validateClinicalData(validationData);
+      setValidationResult(validation.data);
+
+      if (useEnhancedMode && validation.success && validation.data) {
+        // Use enhanced multi-mode system
+        let enhancedInput: any;
+        
+        if (validation.data.mode === 'quick') {
+          enhancedInput = {
+            mainComplaint: mainComplaint || '',
+            diagnosis: diagnosisForm || '',
+            context: {
+              patientAge: patientContext.age,
+              patientGender: patientContext.gender,
+              specialization: patientContext.specialization,
+              urgency: 'Routine'
+            }
+          };
+        } else {
+          enhancedInput = {
+            anamnesis: anamnesis || '',
+            physicalExam: physicalExam || '',
+            differentialDiagnoses: diagnosisForm ? [{ diagnosis: diagnosisForm, confidence: 90, priority: 'High', reasoning: 'Based on form input' }] : [],
+            context: {
+              patientAge: patientContext.age,
+              patientGender: patientContext.gender,
+              specialization: patientContext.specialization,
+              urgency: 'Routine'
+            }
+          };
+        }
+
+        const result = await runEnhancedSuggestSupportingExaminations(enhancedInput);
+        
+        if (result.data) {
+          setEnhancedAiSuggestions(result.data);
+          
+          if (result.data.recommendations && result.data.recommendations.length > 0) {
+            setShowConfirmation(true);
+          } else {
+            toast({ 
+              title: 'Tidak Ada Rekomendasi', 
+              description: validation.data.mode === 'quick' 
+                ? 'Mode cepat: Tambahkan keluhan utama atau diagnosis untuk rekomendasi lebih baik.'
+                : 'AI tidak menemukan rekomendasi pemeriksaan yang relevan saat ini.',
+              variant: validation.data.mode === 'quick' ? 'default' : 'destructive'
+            });
+          }
+        }
       } else {
-        toast({ title: 'Tidak Ada Rekomendasi', description: 'AI tidak menemukan rekomendasi pemeriksaan yang relevan saat ini.' });
+        // Fallback to original system
+        if (!anamnesis || !physicalExam) {
+          toast({ 
+            title: 'Data Kurang', 
+            description: validation.data?.suggestions.join('. ') || 'Anamnesis dan Pemeriksaan Fisik harus diisi.', 
+            variant: 'destructive' 
+          });
+          return;
+        }
+
+        const differentialDiagnoses = diagnosisForm ? [{ diagnosis: diagnosisForm, confidence: 90, priority: 'High', reasoning: 'Based on form input' }] : [];
+
+        const result = await suggestSupportingExaminations({
+          anamnesis,
+          physicalExam,
+          differentialDiagnoses,
+        });
+
+        setAiSuggestions(result);
+        if (result.recommendations.length > 0) {
+          setShowConfirmation(true);
+        } else {
+          toast({ title: 'Tidak Ada Rekomendasi', description: 'AI tidak menemukan rekomendasi pemeriksaan yang relevan saat ini.' });
+        }
       }
     } catch (error) {
       console.error("Failed to get AI suggestions:", error);
-      toast({ title: 'Gagal Menghasilkan Rekomendasi', description: 'Terjadi kesalahan saat berkomunikasi dengan AI.', variant: 'destructive' });
+      toast({ 
+        title: 'Gagal Menghasilkan Rekomendasi', 
+        description: 'Terjadi kesalahan saat berkomunikasi dengan AI. Coba gunakan mode manual.',
+        variant: 'destructive' 
+      });
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleAcceptSuggestions = () => {
-    if (!aiSuggestions) return;
+    if (!aiSuggestions && !enhancedAiSuggestions) return;
 
     let suggestionsAddedCount = 0;
-    aiSuggestions.recommendations.forEach(suggestion => {
-      const formFieldName = requestMap[suggestion.examination];
-      if (formFieldName) {
-        setValue(formFieldName, true, { shouldDirty: true, shouldValidate: true });
-        suggestionsAddedCount++;
-      }
-    });
+    
+    // Handle enhanced suggestions
+    if (enhancedAiSuggestions) {
+      enhancedAiSuggestions.recommendations.forEach(suggestion => {
+        const formFieldName = requestMap[suggestion.examination];
+        if (formFieldName && suggestion.confidence >= 0.6) {
+          setValue(formFieldName, true, { shouldDirty: true, shouldValidate: true });
+          suggestionsAddedCount++;
+        }
+      });
+    }
+    
+    // Handle original suggestions
+    if (aiSuggestions) {
+      aiSuggestions.recommendations.forEach(suggestion => {
+        const formFieldName = requestMap[suggestion.examination];
+        if (formFieldName) {
+          setValue(formFieldName, true, { shouldDirty: true, shouldValidate: true });
+          suggestionsAddedCount++;
+        }
+      });
+    }
 
     if (suggestionsAddedCount > 0) {
         toast({ 
@@ -236,6 +338,7 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
 
     setShowConfirmation(false);
     setAiSuggestions(null);
+    setEnhancedAiSuggestions(null);
   };
 
   const triggerFileSelect = () => fileInputRef.current?.click();
@@ -264,10 +367,61 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
                 <CardDescription>Dapatkan rekomendasi pemeriksaan penunjang berdasarkan data klinis pasien untuk membantu menegakkan diagnosis.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <Button type="button" onClick={handleGenerateSuggestions} disabled={isGenerating}>
-                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    {isGenerating ? 'Menganalisis...' : 'Dapatkan Rekomendasi AI'}
-                </Button>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                        <Button type="button" onClick={handleGenerateSuggestions} disabled={isGenerating}>
+                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            {isGenerating ? 'Menganalisis...' : 'Dapatkan Rekomendasi AI'}
+                        </Button>
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="enhanced-mode"
+                                checked={useEnhancedMode}
+                                onChange={(e) => setUseEnhancedMode(e.target.checked)}
+                                className="rounded border-gray-300"
+                            />
+                            <label htmlFor="enhanced-mode" className="text-sm text-gray-600">
+                                Gunakan Mode Cerdas
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                {validationResult && (
+                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                validationResult.mode === 'comprehensive' ? 'bg-green-100 text-green-800' :
+                                validationResult.mode === 'standard' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-blue-100 text-blue-800'
+                            }`}>
+                                Mode: {validationResult.mode === 'comprehensive' ? 'Komprehensif' :
+                                       validationResult.mode === 'standard' ? 'Standar' : 'Cepat'}
+                            </span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                validationResult.confidence === 'high' ? 'bg-green-100 text-green-800' :
+                                validationResult.confidence === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }`}>
+                                Kepercayaan: {validationResult.confidence === 'high' ? 'Tinggi' :
+                                              validationResult.confidence === 'medium' ? 'Menengah' : 'Rendah'}
+                            </span>
+                        </div>
+                        
+                        {validationResult.suggestions.length > 0 && (
+                            <div className="text-sm text-gray-600">
+                                <strong>Saran:</strong> {validationResult.suggestions.join('. ')}
+                            </div>
+                        )}
+                        
+                        {validationResult.missingFields.length > 0 && (
+                            <div className="text-sm text-orange-600 mt-1">
+                                <strong>Data kurang:</strong> {validationResult.missingFields.join(', ')}
+                            </div>
+                        )}
+                    </div>
+                )}
             </CardContent>
         </Card>
         <Accordion type="single" collapsible className="w-full space-y-4">
@@ -483,6 +637,27 @@ export function SupportingExamForm({ patient }: { patient: Patient }) {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="max-h-60 overflow-y-auto p-2 border rounded-md my-4">
+                    {/* Enhanced suggestions */}
+                    {enhancedAiSuggestions?.recommendations.map((suggestion, index) => (
+                         <div key={index} className="mb-3 p-3 rounded-lg bg-secondary/50">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-semibold">{suggestion.examination}</h4>
+                                <div className="flex items-center space-x-2">
+                                    <Badge variant="secondary">Disarankan</Badge>
+                                    <Badge variant={suggestion.priority === 'High' ? 'destructive' : suggestion.priority === 'Medium' ? 'default' : 'outline'}>
+                                        {suggestion.priority === 'High' ? 'Tinggi' : suggestion.priority === 'Medium' ? 'Menengah' : 'Rendah'}
+                                    </Badge>
+                                    {suggestion.confidence && (
+                                        <Badge variant="outline">{Math.round(suggestion.confidence * 100)}%</Badge>
+                                    )}
+                                </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{suggestion.reasoning}</p>
+
+                        </div>
+                    ))}
+                    
+                    {/* Original suggestions */}
                     {aiSuggestions?.recommendations.map((suggestion, index) => (
                          <div key={index} className="mb-3 p-3 rounded-lg bg-secondary/50">
                             <div className="flex justify-between items-center">
